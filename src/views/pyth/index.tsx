@@ -1,7 +1,7 @@
 import { PriceStatus } from "@pythnetwork/client";
 import { Account, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { Button, Col, Row, Table } from "antd";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { sendTransaction, useConnection } from "../../contexts/connection";
 import { useWallet } from "../../contexts/wallet";
@@ -9,6 +9,29 @@ import usePyth from "../../hooks/usePyth";
 import { PYTH_HELLO_WORLD } from "../../utils/ids";
 import { notify } from "../../utils/notifications";
 import sigFigs from "../../utils/sigFigs";
+import ProductModal from "../../components/ProductModal";
+
+const rowSelection = {
+  // selectedRowKeys,
+  // onChange: this.onSelectChange,
+  checkStrictly: true,
+  type: "radio" as const
+};
+
+const handleClick = (e: React.MouseEvent<HTMLElement>) => {
+  switch (e.detail) {
+    case 1:
+      console.log("click");
+      break;
+    case 2:
+      console.log("double click");
+      break;
+    case 3:
+      console.log("triple click");
+      break;
+  }
+};
+
 
 const columns = [
   { title: "Symbol", dataIndex: ["product", "symbol"] },
@@ -108,23 +131,38 @@ export const PythView = () => {
     [symbolMap]
   );
   return (
-    <Row gutter={[16, 16]} align="middle">
-      <Col span={24}>
-        <Table dataSource={products} columns={columns} />
-      </Col>
-      <Col span={24}>
-        <Button onClick={connected ? executeTest : connect}>
-          {connected ? "Execute Test Transaction" : "Connect Wallet"}
-        </Button>
-      </Col>
-      <Col span={24}>
-        <Link to="/">
-          <Button>Back</Button>
-        </Link>
-      </Col>
-      <Col span={24}>
-        <div className="builton" />
-      </Col>
-    </Row>
+    <>
+      <Row gutter={[16, 16]} align="middle">
+        <Col span={24}>
+          <Table
+              dataSource={products}
+              columns={columns} 
+              onRow={(record, rowIndex) => {
+                return {
+                  onClick: (e) => { e.preventDefault(); handleClick(e) }, // click row
+                  onDoubleClick: (e) => { e.preventDefault(); },
+                  onContextMenu: (e) => { e.preventDefault(); console.log('right click') }, // right button click row
+                  onMouseEnter: (e) => {}, // mouse enter row
+                  onMouseLeave: (e) => {}, // mouse leave row
+                };
+              }}
+          />
+        </Col>
+        <Col span={24}>
+          <Button onClick={connected ? executeTest : connect}>
+            {connected ? "Execute Test Transaction" : "Connect Wallet"}
+          </Button>
+        </Col>
+        <Col span={24}>
+          <Link to="/">
+            <Button>Back</Button>
+          </Link>
+        </Col>
+        <Col span={24}>
+          <div className="builton" />
+        </Col>
+      </Row>
+      <ProductModal isOpen />
+    </>
   );
 };
