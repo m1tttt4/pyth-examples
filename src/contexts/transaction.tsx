@@ -1,8 +1,8 @@
 import type { PublicKey } from "@solana/web3.js";
-
+import { Pyth } from "./../components/Icons/pyth";
 import Wallet from "@project-serum/sol-wallet-adapter";
 import { Transaction } from "@solana/web3.js";
-import { Button, Modal } from "antd";
+import { Button, Modal, InputNumber } from "antd";
 import EventEmitter from "eventemitter3";
 import React, {
   useCallback,
@@ -14,7 +14,7 @@ import React, {
 import { notify } from "./../utils/notifications";
 import sigFigs from "./../utils/sigFigs";
 import { useLocalStorageState } from "./../utils/utils";
-import { NumericInput } from "./../components/Input/numeric";
+// import { InputNumber } from "./../components/Input/numeric";
 
 const TransactionContext = React.createContext<{
   product?: object;
@@ -38,22 +38,20 @@ export function TransactionProvider({ children = null as any, product = {} as an
     >
       {children}
       <Modal
-        title="Modal title"
+        title={
+          <div className="transaction-modal-title">
+            {product.price.productAccountKey.toString()}
+          </div>
+        }  
         okText="Connect"
         visible={isModalVisible}
         okButtonProps={{ style: { display: "none" } }}
         onCancel={close}
         width={450}
       >
-        <div style={{ display: 'inline-block', alignItems: 'center', width: '100%', marginBottom: '1em'}}>
-          <div style={{ width: '100%', textAlign: 'center', textDecorationLine: 'underline' }}>
-            PRODUCTACCOUNTKEY
-          </div>
-          <div style={{ width: '100%', textAlign: 'center' }}>
-            {product.price.productAccountKey.toString()}
-          </div>
-        </div>
+        {/* productAccountKey */}
         
+        {/* All product keys */}
         {Object.keys(product.product).map((value: string) => (
           <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
             <div style={{ float: 'left', width: 'auto' }}>
@@ -65,6 +63,7 @@ export function TransactionProvider({ children = null as any, product = {} as an
           </div>
         ))}
 
+        {/* Current Price */}
         <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
           <div style={{ float: 'left', width: 'auto' }}>
             CURRENT_PRICE:
@@ -74,6 +73,7 @@ export function TransactionProvider({ children = null as any, product = {} as an
           </div>
         </div>
         
+        {/* Confidence */}
         <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
           <div style={{ float: 'left', width: 'auto' }}>
             CONFIDENCE:
@@ -82,62 +82,63 @@ export function TransactionProvider({ children = null as any, product = {} as an
             {`\xB1$${sigFigs(product.price.confidence)}`}
           </div>
         </div>
-        
+       
+        {/* Strike */}
         <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
           <div style={{ float: 'left', width: 'auto' }}>
             Strike: 
           </div>
           <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
-            <NumericInput />
+            <InputNumber />
           </div>
         </div>
 
+        {/* Expiry */}
         <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
           <div style={{ float: 'left', width: 'auto' }}>
             Expiry:
           </div>
           <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
-            <NumericInput />
+            <InputNumber />
           </div>
         </div>
 
+        {/* Quantity */}
         <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
           <div style={{ float: 'left', width: 'auto' }}>
             Quantity: 
           </div>
           <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
-            <NumericInput />
+            <InputNumber />
           </div>
         </div>
 
+        {/* Option price */}
         <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
           <div style={{ float: 'left', width: 'auto' }}>
             Option Price: 
           </div>
           <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
-            <NumericInput />
+            <InputNumber />
           </div>
         </div>
-
-        <Button
-          size="large"
-          type={"primary"}
-          icon={
-            <img
-              width={20}
-              height={20}
-              alt=""
-              style={{ marginRight: 8 }}
-            />
-          }
-          style={{
-            display: "block",
-            width: "100%",
-            textAlign: "left",
-            marginBottom: 8,
-          }}
-        >
-        </Button>
+        
+        <div className="transaction-modal-wrapper-button">
+          <Button
+            size="large"
+            type={"primary"}
+            className="transaction-modal-button-buy"
+          >
+            <Pyth /> Buy
+          </Button>
+          <Button
+            size="large"
+            type={"primary"}
+            className="transaction-modal-button-sell"
+          >
+            Sell <Pyth />
+          </Button>
+        </div>
       </Modal>
     </TransactionContext.Provider>
   );

@@ -31,28 +31,42 @@ export const PythView = () => {
   const { symbolMap } = usePyth();
   const { wallet, connected, connect } = useWallet();
   const connection = useConnection();
+  const columnWidth = "auto" as string;
   const columns = [
-    { title: "Symbol", dataIndex: ["product", "symbol"] },
     {
-      title: "PublicKey",
-      dataIndex: ["price", "productAccountKey"],
-      align: "center" as "right",
-      render: (value: PublicKey) => (
-        <>
-          <div> {value.toString()} </div>
-        </>
-      ),
+      title: "Symbol",
+      dataIndex: ["product", "symbol"],
+      width: `${columnWidth}`,
+    },
+    {
+      title: "Asset Type",
+      dataIndex: ["product", "asset_type"],
+      width: `${columnWidth}`,
+    },
+    {
+      title: "Status",
+      dataIndex: ["price", "status"],
+      render: (value: number) => PriceStatus[value],
+      width: `${columnWidth}`,
     },
     {
       title: "Price",
       dataIndex: ["price", "price"],
       align: "right" as "right",
+      width: `${columnWidth}`,
       render: (value: number) => `$${sigFigs(value)}`,
+    },
+    {
+      title: "Confidence",
+      dataIndex: ["price", "confidence"],
+      align: "right" as "right",
+      width: `${columnWidth}`,
+      render: (value: number) => `\xB1$${sigFigs(value)}`,
     },
     {
       title: "Options",
       align: "right" as "right",
-      dataIndex: [],
+      width: `${columnWidth}`,
       render: (value: string) => (
       <>
         <TransactionProvider product={value}>
