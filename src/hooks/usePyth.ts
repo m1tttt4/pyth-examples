@@ -15,7 +15,6 @@ const BAD_SYMBOLS = ["BCH/USD", "LTC/USD"];
 const createSetSymbolMapUpdater = (
   symbol: string,
   product: any,
-  productKey: PublicKey | null,
   price: any
 ) => (prev: any) =>
   !prev[symbol] || prev[symbol].price["currentSlot"] < price.currentSlot
@@ -23,7 +22,6 @@ const createSetSymbolMapUpdater = (
         ...prev,
         [symbol]: {
           product,
-          productKey,
           price,
         },
       }
@@ -33,14 +31,13 @@ const handlePriceInfo = (
   symbol: string,
   product: any,
   accountInfo: AccountInfo<Buffer> | null,
-  productKey: PublicKey | null,
   setSymbolMap: Function
 ) => {
   if (!accountInfo || !accountInfo.data) return;
   const price = parsePriceData(accountInfo.data);
   if (price.priceType !== 1)
     console.log(symbol, price.priceType, price.nextPriceAccountKey);
-  setSymbolMap(createSetSymbolMapUpdater(symbol, product, productKey, price));
+  setSymbolMap(createSetSymbolMapUpdater(symbol, product, price));
 };
 
 interface ISymbolMap {
@@ -108,7 +105,6 @@ const usePyth = (symbolFilter?: Array<String>) => {
         );
         if (cancelled) return;
         for (let i = 0; i < productsInfos.keys.length; i++) {
-          const productKey = new PublicKey(productsInfos.keys[i]);
           const productData = productsData[i];
           const product = productData.product;
           const symbol = product["symbol"];
@@ -123,11 +119,11 @@ const usePyth = (symbolFilter?: Array<String>) => {
             (!symbolFilter || symbolFilter.includes(symbol)) &&
             !BAD_SYMBOLS.includes(symbol)
           ) {
-            handlePriceInfo(symbol, product, priceInfo, productKey, setSymbolMap);
+            handlePriceInfo(symbol, product, priceInfo, setSymbolMap);
 
             subscription_ids.push(
               connection.onAccountChange(priceAccountKey, (accountInfo) => {
-                handlePriceInfo(symbol, product, accountInfo, productKey, setSymbolMap);
+                handlePriceInfo(symbol, product, accountInfo, setSymbolMap);
               })
             );
           }

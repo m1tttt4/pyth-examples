@@ -1,7 +1,7 @@
 import { PriceStatus } from "@pythnetwork/client";
 import { Account, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { Button, Col, Row, Table } from "antd";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { sendTransaction, useConnection } from "../../contexts/connection";
 import { useWallet } from "../../contexts/wallet";
@@ -9,14 +9,8 @@ import usePyth from "../../hooks/usePyth";
 import { PYTH_HELLO_WORLD } from "../../utils/ids";
 import { notify } from "../../utils/notifications";
 import sigFigs from "../../utils/sigFigs";
-import ProductModal from "../../components/ProductModal";
-
-const rowSelection = {
-  // selectedRowKeys,
-  // onChange: this.onSelectChange,
-  checkStrictly: true,
-  type: "radio" as const
-};
+import { TransactionProvider } from "../../contexts/transaction";
+import { TransactionButton } from "../../components/TransactionButton";
 
 const handleClick = (e: React.MouseEvent<HTMLElement>) => {
   switch (e.detail) {
@@ -33,47 +27,44 @@ const handleClick = (e: React.MouseEvent<HTMLElement>) => {
 };
 
 
-const columns = [
-  { title: "Symbol", dataIndex: ["product", "symbol"] },
-  { title: "Asset Type", dataIndex: ["product", "asset_type"] },
-  {
-    title: "Status",
-    dataIndex: ["price", "status"],
-    render: (value: number) => PriceStatus[value],
-  },
-  // {
-    // title: "Valid Slot",
-    // dataIndex: ["price", "validSlot"],
-    // render: (value: BigInt) => value.toString(),
-  // },
-  {
-    title: "PublicKey",
-    dataIndex: ["productKey"],
-    align: "center" as "right",
-    render: (value: PublicKey) => (
-      <>
-        <div> {value.toString()} </div>
-      </>
-    ),
-  },
-  {
-    title: "Price",
-    dataIndex: ["price", "price"],
-    align: "right" as "right",
-    render: (value: number) => `$${sigFigs(value)}`,
-  },
-  {
-    title: "Confidence",
-    dataIndex: ["price", "confidence"],
-    align: "right" as "right",
-    render: (value: number) => `\xB1$${sigFigs(value)}`,
-  },
-];
-
 export const PythView = () => {
   const { symbolMap } = usePyth();
   const { wallet, connected, connect } = useWallet();
   const connection = useConnection();
+  const columns = [
+    { title: "Symbol", dataIndex: ["product", "symbol"] },
+    {
+      title: "PublicKey",
+      dataIndex: ["price", "productAccountKey"],
+      align: "center" as "right",
+      render: (value: PublicKey) => (
+        <>
+          <div> {value.toString()} </div>
+        </>
+      ),
+    },
+    {
+      title: "Price",
+      dataIndex: ["price", "price"],
+      align: "right" as "right",
+      render: (value: number) => `$${sigFigs(value)}`,
+    },
+    {
+      title: "Transact",
+      align: "right" as "right",
+      dataIndex: [],
+      render: (value: string) => (
+      <>
+        <TransactionProvider
+          product={value}
+        >
+          <TransactionButton />
+        </TransactionProvider>
+      </>
+      ),
+    },
+  ];
+
   const executeTest = () => {
     if (!wallet) {
       return;
@@ -104,7 +95,12 @@ export const PythView = () => {
         programId: PYTH_HELLO_WORLD,
       })
     );
-
+    // send: 
+      // expiry: unix-timestamp,
+      // strike: float,
+      // publicKey: PublicKey,
+      // instruction: buy|sell
+      
     sendTransaction(connection, wallet, instructions, signers).then((txid) => {
       notify({
         message: "Transaction executed on Solana",
@@ -121,7 +117,6 @@ export const PythView = () => {
       });
     });
   };
-  console.log(symbolMap)
 
   const products: object[] = useMemo(
     () =>
@@ -162,7 +157,6 @@ export const PythView = () => {
           <div className="builton" />
         </Col>
       </Row>
-      <ProductModal isOpen />
     </>
   );
 };
