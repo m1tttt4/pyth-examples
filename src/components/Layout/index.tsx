@@ -10,7 +10,7 @@ const { Header, Content } = Layout;
 
 export const AppLayout = React.memo((props: any) => {
   return (
-    <div className="App wormhole-bg">
+    <div className="App wormhole-bg" data-title={LABELS.APP_TITLE}>
       <Layout>
         <Header className="App-Bar">
           <Link to="/">

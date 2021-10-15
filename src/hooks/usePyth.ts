@@ -38,7 +38,6 @@ const handlePriceInfo = (
 ) => {
   if (!accountInfo || !accountInfo.data) return;
   const price = parsePriceData(accountInfo.data);
-  const publicKey = new PublicKey(accountInfo.owner);
   if (price.priceType !== 1)
     console.log(symbol, price.priceType, price.nextPriceAccountKey);
   setSymbolMap(createSetSymbolMapUpdater(symbol, product, productKey, price));
