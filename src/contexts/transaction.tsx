@@ -12,7 +12,9 @@ import React, {
   useState,
 } from "react";
 import { notify } from "./../utils/notifications";
+import sigFigs from "./../utils/sigFigs";
 import { useLocalStorageState } from "./../utils/utils";
+import { NumericInput } from "./../components/Input/numeric";
 
 const TransactionContext = React.createContext<{
   product?: object;
@@ -41,8 +43,82 @@ export function TransactionProvider({ children = null as any, product = {} as an
         visible={isModalVisible}
         okButtonProps={{ style: { display: "none" } }}
         onCancel={close}
-        width={400}
+        width={450}
       >
+        <div style={{ display: 'inline-block', alignItems: 'center', width: '100%', marginBottom: '1em'}}>
+          <div style={{ width: '100%', textAlign: 'center', textDecorationLine: 'underline' }}>
+            PRODUCTACCOUNTKEY
+          </div>
+          <div style={{ width: '100%', textAlign: 'center' }}>
+            {product.price.productAccountKey.toString()}
+          </div>
+        </div>
+        
+        {Object.keys(product.product).map((value: string) => (
+          <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
+            <div style={{ float: 'left', width: 'auto' }}>
+              {value.toUpperCase()}:
+            </div>
+            <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
+              {product.product[value]}
+            </div>
+          </div>
+        ))}
+
+        <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
+          <div style={{ float: 'left', width: 'auto' }}>
+            CURRENT_PRICE:
+          </div>
+          <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
+            {`$${sigFigs(product.price.price)}`}
+          </div>
+        </div>
+        
+        <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
+          <div style={{ float: 'left', width: 'auto' }}>
+            CONFIDENCE:
+          </div>
+          <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
+            {`\xB1$${sigFigs(product.price.confidence)}`}
+          </div>
+        </div>
+        
+        <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
+          <div style={{ float: 'left', width: 'auto' }}>
+            Strike: 
+          </div>
+          <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
+            <NumericInput />
+          </div>
+        </div>
+
+        <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
+          <div style={{ float: 'left', width: 'auto' }}>
+            Expiry:
+          </div>
+          <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
+            <NumericInput />
+          </div>
+        </div>
+
+        <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
+          <div style={{ float: 'left', width: 'auto' }}>
+            Quantity: 
+          </div>
+          <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
+            <NumericInput />
+          </div>
+        </div>
+
+        <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
+          <div style={{ float: 'left', width: 'auto' }}>
+            Option Price: 
+          </div>
+          <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
+            <NumericInput />
+          </div>
+        </div>
+
         <Button
           size="large"
           type={"primary"}

@@ -20,19 +20,30 @@ export const TransactionButton = (props: TransactionButtonProps) => {
   const menu = (
     <Menu>
       <Menu.Item key="3" onClick={connected ? selectTransaction : select}>
-        {connected ? "Buy/Sell" : "Connect"}
+        {connected ? "Buy/Sell" : "Change wallet"}
       </Menu.Item>
     </Menu>
   );
 
-  if (provider) {
+  if (provider && !connected) {
+    return (
+      <Dropdown.Button
+        onClick={connect}
+        disabled={connected && disabled}
+        overlay={menu}
+      >
+        {provider.name}
+      </Dropdown.Button>
+    );
+  }
+  if (provider && connected) {
     return (
       <Button
         {...rest}
-        onClick={connected ? selectTransaction : connect}
+        onClick={selectTransaction}
         disabled={connected && disabled}
       >
-        {connected ? "Buy/Sell" : provider.name}
+        Buy/Sell
       </Button>
     );
   }
@@ -43,7 +54,7 @@ export const TransactionButton = (props: TransactionButtonProps) => {
       disabled={connected && disabled}
       overlay={menu}
     >
-      {connected ? 'Buy/Sell' : 'Connect'}
+      {connected ? "Buy/Sell" : "Connect"}
     </Dropdown.Button>
   );
 };

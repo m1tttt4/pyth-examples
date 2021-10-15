@@ -50,14 +50,12 @@ export const PythView = () => {
       render: (value: number) => `$${sigFigs(value)}`,
     },
     {
-      title: "Transact",
+      title: "Options",
       align: "right" as "right",
       dataIndex: [],
       render: (value: string) => (
       <>
-        <TransactionProvider
-          product={value}
-        >
+        <TransactionProvider product={value}>
           <TransactionButton />
         </TransactionProvider>
       </>
@@ -127,36 +125,41 @@ export const PythView = () => {
   );
   return (
     <>
-      <Row gutter={[16, 16]} align="middle">
-        <Col span={24}>
-          <Table
-              dataSource={products}
-              columns={columns} 
-              onRow={(record, rowIndex) => {
-                return {
-                  onClick: (e) => { e.preventDefault(); handleClick(e) }, // click row
-                  onDoubleClick: (e) => { e.preventDefault(); },
-                  onContextMenu: (e) => { e.preventDefault(); console.log('right click') }, // right button click row
-                  onMouseEnter: (e) => {}, // mouse enter row
-                  onMouseLeave: (e) => {}, // mouse leave row
-                };
-              }}
-          />
-        </Col>
-        <Col span={24}>
-          <Button onClick={connected ? executeTest : connect}>
-            {connected ? "Execute Test Transaction" : "Connect Wallet"}
-          </Button>
-        </Col>
-        <Col span={24}>
-          <Link to="/">
-            <Button>Back</Button>
-          </Link>
-        </Col>
-        <Col span={24}>
-          <div className="builton" />
-        </Col>
-      </Row>
+      <div className="tableWrapper">
+        <div style={{ display: 'inline-block', alignItems: 'center', width: '100%' }}>
+          Prices do not refresh...
+        </div>
+        <Row gutter={[16, 16]} align="middle">
+          <Col span={24}>
+            <Table
+                dataSource={products}
+                columns={columns} 
+                onRow={(record, rowIndex) => {
+                  return {
+                    onClick: (e) => { e.preventDefault(); handleClick(e) }, // click row
+                    onDoubleClick: (e) => { e.preventDefault(); },
+                    onContextMenu: (e) => { e.preventDefault(); console.log('right click') }, // right button click row
+                    onMouseEnter: (e) => {}, // mouse enter row
+                    onMouseLeave: (e) => {}, // mouse leave row
+                  };
+                }}
+            />
+          </Col>
+          <Col span={24}>
+            <Button onClick={connected ? executeTest : connect}>
+              {connected ? "Execute Test Transaction" : "Connect Wallet"}
+            </Button>
+          </Col>
+          <Col span={24}>
+            <Link to="/">
+              <Button>Back</Button>
+            </Link>
+          </Col>
+          <Col span={24}>
+            <div className="builton" />
+          </Col>
+        </Row>
+      </div>
     </>
   );
 };
