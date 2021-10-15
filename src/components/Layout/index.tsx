@@ -11,7 +11,7 @@ const { Header, Content } = Layout;
 export const AppLayout = React.memo((props: any) => {
   return (
     <div className="App wormhole-bg">
-      <Layout title={LABELS.APP_TITLE}>
+      <Layout>
         <Header className="App-Bar">
           <Link to="/">
             <div className="app-title">

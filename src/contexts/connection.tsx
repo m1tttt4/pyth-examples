@@ -39,7 +39,7 @@ export const ENDPOINTS = [
   },
   {
     name: "localnet" as ENV,
-    endpoint: "http://127.0.0.1:8899",
+    endpoint: "http://34.122.28.32:8899",
     chainID: ChainID.Devnet,
   },
 ];

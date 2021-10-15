@@ -16,7 +16,11 @@ export let SWAP_PROGRAM_ID = new PublicKey(
 );
 
 export let PYTH_HELLO_WORLD = new PublicKey(
-  "5pdWfGU6XorjgL29sejRAU9gvxD8N8Pv2efR3ZEvCpQ5"
+  "BKYTayVSTcCWYm8Qzub8EGkr61Tsnepp4ioxbtVFBCFw"
+);
+
+export let BINARY_OPTIONS_ID = new PublicKey(
+  "61CT8HS9jQvCjFL9i4V9RkAFqZfe8BQ2rdmMKvDXrcNL"
 );
 
 export const PROGRAM_IDS = [

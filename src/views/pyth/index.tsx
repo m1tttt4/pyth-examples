@@ -18,10 +18,20 @@ const columns = [
     dataIndex: ["price", "status"],
     render: (value: number) => PriceStatus[value],
   },
+  // {
+    // title: "Valid Slot",
+    // dataIndex: ["price", "validSlot"],
+    // render: (value: BigInt) => value.toString(),
+  // },
   {
-    title: "Valid Slot",
-    dataIndex: ["price", "validSlot"],
-    render: (value: BigInt) => value.toString(),
+    title: "PublicKey",
+    dataIndex: ["productKey"],
+    align: "center" as "right",
+    render: (value: PublicKey) => (
+      <>
+        <div> {value.toString()} </div>
+      </>
+    ),
   },
   {
     title: "Price",
@@ -41,7 +51,6 @@ export const PythView = () => {
   const { symbolMap } = usePyth();
   const { wallet, connected, connect } = useWallet();
   const connection = useConnection();
-
   const executeTest = () => {
     if (!wallet) {
       return;
@@ -89,6 +98,7 @@ export const PythView = () => {
       });
     });
   };
+  console.log(symbolMap)
 
   const products: object[] = useMemo(
     () =>

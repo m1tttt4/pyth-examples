@@ -15,6 +15,7 @@ const BAD_SYMBOLS = ["BCH/USD", "LTC/USD"];
 const createSetSymbolMapUpdater = (
   symbol: string,
   product: any,
+  productKey: PublicKey | null,
   price: any
 ) => (prev: any) =>
   !prev[symbol] || prev[symbol].price["currentSlot"] < price.currentSlot
@@ -22,6 +23,7 @@ const createSetSymbolMapUpdater = (
         ...prev,
         [symbol]: {
           product,
+          productKey,
           price,
         },
       }
@@ -31,13 +33,15 @@ const handlePriceInfo = (
   symbol: string,
   product: any,
   accountInfo: AccountInfo<Buffer> | null,
+  productKey: PublicKey | null,
   setSymbolMap: Function
 ) => {
   if (!accountInfo || !accountInfo.data) return;
   const price = parsePriceData(accountInfo.data);
+  const publicKey = new PublicKey(accountInfo.owner);
   if (price.priceType !== 1)
     console.log(symbol, price.priceType, price.nextPriceAccountKey);
-  setSymbolMap(createSetSymbolMapUpdater(symbol, product, price));
+  setSymbolMap(createSetSymbolMapUpdater(symbol, product, productKey, price));
 };
 
 interface ISymbolMap {
@@ -105,27 +109,26 @@ const usePyth = (symbolFilter?: Array<String>) => {
         );
         if (cancelled) return;
         for (let i = 0; i < productsInfos.keys.length; i++) {
-          const key = productsInfos.keys[i];
-
+          const productKey = new PublicKey(productsInfos.keys[i]);
           const productData = productsData[i];
           const product = productData.product;
           const symbol = product["symbol"];
           const priceAccountKey = productData.priceAccountKey;
           const priceInfo = priceInfos.array[i];
 
-          console.log(
-            `Product ${symbol} key: ${key} price: ${priceInfos.keys[i]}`
-          );
+          // console.log(
+            // `Product ${symbol} key: ${productKey} price: ${priceInfos.keys[i]}`
+          // );
 
           if (
             (!symbolFilter || symbolFilter.includes(symbol)) &&
             !BAD_SYMBOLS.includes(symbol)
           ) {
-            handlePriceInfo(symbol, product, priceInfo, setSymbolMap);
+            handlePriceInfo(symbol, product, priceInfo, productKey, setSymbolMap);
 
             subscription_ids.push(
               connection.onAccountChange(priceAccountKey, (accountInfo) => {
-                handlePriceInfo(symbol, product, accountInfo, setSymbolMap);
+                handlePriceInfo(symbol, product, accountInfo, productKey, setSymbolMap);
               })
             );
           }
