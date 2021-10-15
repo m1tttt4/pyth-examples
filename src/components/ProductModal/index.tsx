@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/solid'
 import Modal from '../Modal'
-import { Button, Popover } from "antd";
+import { Button } from "antd";
 import { ModalProps } from '../../types/types'
 
 const ProductModal = ({ isOpen, onClose, children }: ModalProps) => {
