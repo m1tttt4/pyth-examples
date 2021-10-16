@@ -1,0 +1,3 @@
+[submodule "program/solana-soce"]
+	path = program/solana-soce
+	url = https://github.com/goindi/solana-soce.git
