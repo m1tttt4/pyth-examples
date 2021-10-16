@@ -1,12 +1,12 @@
 # 🏗 Solana App Scaffold
-Scaffolding for a dapp built on Solana
+Work in progress for binary options on Solana
 
 # Quickstart
 
 ```bash
-git clone https://github.com/pyth-network/pyth-examples.git
+git clone https://github.com/m1tttt4/solana-soce-ui
 
-cd pyth-examples
+cd solana-soce-ui
 ```
 
 ```bash
@@ -28,7 +28,7 @@ yarn start
 4. Install NPM, Yarn
 
 # Build Smart Contract (compiled for BPF)
-Run the following from the program/ subdirectory:
+Run the following from the program/solana-soce subdirectory:
 
 ```bash
 $ cargo build-bpf
