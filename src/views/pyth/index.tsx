@@ -1,7 +1,7 @@
 import { PriceStatus } from "@pythnetwork/client";
 import { Account, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { Button, Col, Row, Table } from "antd";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { sendTransaction, useConnection } from "../../contexts/connection";
 import { useWallet } from "../../contexts/wallet";
@@ -26,34 +26,52 @@ const handleClick = (e: React.MouseEvent<HTMLElement>) => {
   }
 };
 
-
 export const PythView = () => {
   const { symbolMap } = usePyth();
   const { wallet, connected, connect } = useWallet();
   const connection = useConnection();
   const columnWidth = "auto" as string;
+  const columnClassName = "table-column";
+  // const [filteredInfo, sortedInfo] = useState(Object);
+  // const [order, columnKey] = useState();
+  // const handleChange = (pagination: {}, filters: {}, sorter: {}) => {
+    // filteredInfo(filters);
+    // sortedInfo(sorter);
+  // };
+  // const clearFilters = () => {
+    // filteredInfo(null);
+  // };
+  // const clearAll = () => {
+    // filteredInfo(null);
+    // sortedInfo(Function);
+  // };
+
   const columns = [
     {
       title: "Symbol",
       dataIndex: ["product", "symbol"],
       width: `${columnWidth}`,
+      className: `${columnClassName}`,
     },
     {
       title: "Asset Type",
       dataIndex: ["product", "asset_type"],
       width: `${columnWidth}`,
+      className: `${columnClassName}`,
     },
     {
       title: "Status",
       dataIndex: ["price", "status"],
-      render: (value: number) => PriceStatus[value],
       width: `${columnWidth}`,
+      className: `${columnClassName}`,
+      render: (value: number) => PriceStatus[value],
     },
     {
       title: "Price",
       dataIndex: ["price", "price"],
       align: "right" as "right",
       width: `${columnWidth}`,
+      className: `${columnClassName}`,
       render: (value: number) => `$${sigFigs(value)}`,
     },
     {
@@ -61,12 +79,14 @@ export const PythView = () => {
       dataIndex: ["price", "confidence"],
       align: "right" as "right",
       width: `${columnWidth}`,
+      className: `${columnClassName}`,
       render: (value: number) => `\xB1$${sigFigs(value)}`,
     },
     {
       title: "Options",
       align: "right" as "right",
       width: `${columnWidth}`,
+      className: `${columnClassName}`,
       render: (value: string) => (
       <>
         <TransactionProvider product={value}>
@@ -141,7 +161,7 @@ export const PythView = () => {
     <>
       <div className="tableWrapper">
         <div style={{ display: 'inline-block', alignItems: 'center', width: '100%' }}>
-          Prices do not refresh...
+          Prices do not refresh, yet...
         </div>
         <Row gutter={[16, 16]} align="middle">
           <Col span={24}>
