@@ -1,4 +1,4 @@
-# 🏗 Solana App Scaffold
+# 🏗 Simple Options Complex Events
 Work in progress for binary options on Solana
 
 # Quickstart
