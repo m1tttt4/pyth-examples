@@ -1,7 +1,7 @@
 # Simple Options Complex Events
 Work in progress for binary options on Solana
 
-UI extends pyth-examples ![image](https://user-images.githubusercontent.com/11201675/137568157-8357b8a7-4dbc-4600-b7b2-5a449f626e42.png)
+![image](https://user-images.githubusercontent.com/11201675/137568157-8357b8a7-4dbc-4600-b7b2-5a449f626e42.png) UI extends pyth-examples
 
 # Quickstart
 
