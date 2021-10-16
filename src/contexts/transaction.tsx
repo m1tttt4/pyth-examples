@@ -28,7 +28,6 @@ export function TransactionProvider({ children = null as any, product = {} as an
   const [isModalVisible, setIsModalVisible] = useState(false);
   const selectTransaction = useCallback(() => setIsModalVisible(true), []);
   const close = useCallback(() => setIsModalVisible(false), []);
-  console.log(product)
   return (
     <TransactionContext.Provider
       value={{

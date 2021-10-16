@@ -1,16 +1,14 @@
 import { PriceStatus } from "@pythnetwork/client";
-import { Account, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { Button, Col, Row, Table } from "antd";
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { sendTransaction, useConnection } from "../../contexts/connection";
-import { useWallet } from "../../contexts/wallet";
 import usePyth from "../../hooks/usePyth";
-import { PYTH_HELLO_WORLD } from "../../utils/ids";
-import { notify } from "../../utils/notifications";
 import sigFigs from "../../utils/sigFigs";
 import { TransactionProvider } from "../../contexts/transaction";
 import { TransactionButton } from "../../components/TransactionButton";
+import { TestTransaction } from "../../utils/transactions";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { WalletAdapter } from "../../contexts/wallet";
 
 const handleClick = (e: React.MouseEvent<HTMLElement>) => {
   switch (e.detail) {
@@ -26,10 +24,16 @@ const handleClick = (e: React.MouseEvent<HTMLElement>) => {
   }
 };
 
-export const DataTable = () => {
+interface DataTableProps {
+  connect: () => any;
+  connected: boolean;
+  connection: Connection;
+  wallet: WalletAdapter | undefined;
+}
+
+export const DataTable = (props: DataTableProps) => {
+  const { connect, connected, connection, wallet } = props;
   const { symbolMap } = usePyth();
-  const { wallet, connected, connect } = useWallet();
-  const connection = useConnection();
   const columnWidth = "auto" as string;
   const columnClassName = "table-column";
   // const [filteredInfo, sortedInfo] = useState(Object);
@@ -96,59 +100,10 @@ export const DataTable = () => {
       ),
     },
   ];
-
-  const executeTest = () => {
-    if (!wallet) {
-      return;
-    }
-
-    const instructions: TransactionInstruction[] = [];
-    const signers: Account[] = [];
-    instructions.push(
-      new TransactionInstruction({
-        keys: [
-          {
-            // GOOG - product
-            pubkey: new PublicKey(
-              "CpPmHbFqkfejPcF8cvxyDogm32Sqo3YGMFBgv3kR1UtG"
-            ),
-            isSigner: false,
-            isWritable: false,
-          },
-          {
-            // GOOG - price
-            pubkey: new PublicKey(
-              "CZDpZ7KeMansnszdEGZ55C4HjGsMSQBzxPu6jqRm6ZrU"
-            ),
-            isSigner: false,
-            isWritable: false,
-          },
-        ],
-        programId: PYTH_HELLO_WORLD,
-      })
-    );
-    // send: 
-      // expiry: unix-timestamp,
-      // strike: float,
-      // publicKey: PublicKey,
-      // instruction: buy|sell
-      
-    sendTransaction(connection, wallet, instructions, signers).then((txid) => {
-      notify({
-        message: "Transaction executed on Solana",
-        description: (
-          <a
-            href={`https://explorer.solana.com/tx/${txid}?cluster=devnet`}
-            // eslint-disable-next-line react/jsx-no-target-blank
-            target="_blank"
-          >
-            Explorer Link
-          </a>
-        ),
-        type: "success",
-      });
-    });
-  };
+  // Google
+  const productKey = new PublicKey("CpPmHbFqkfejPcF8cvxyDogm32Sqo3YGMFBgv3kR1UtG");
+  const priceKey = new PublicKey("CpPmHbFqkfejPcF8cvxyDogm32Sqo3YGMFBgv3kR1UtG");
+  const executeTest = () => TestTransaction(connection, wallet, productKey, priceKey);
 
   const products: object[] = useMemo(
     () =>
