@@ -1,20 +1,11 @@
-import type { PublicKey } from "@solana/web3.js";
 import { Pyth } from "./../components/Icons/pyth";
-import Wallet from "@project-serum/sol-wallet-adapter";
-import { Transaction } from "@solana/web3.js";
 import { Button, Modal, InputNumber } from "antd";
-import EventEmitter from "eventemitter3";
 import React, {
   useCallback,
   useContext,
-  useEffect,
-  useMemo,
   useState,
 } from "react";
-import { notify } from "./../utils/notifications";
 import sigFigs from "./../utils/sigFigs";
-import { useLocalStorageState } from "./../utils/utils";
-// import { InputNumber } from "./../components/Input/numeric";
 
 const TransactionContext = React.createContext<{
   product?: object;
@@ -24,11 +15,12 @@ const TransactionContext = React.createContext<{
   selectTransaction() {},
 });
 
+
 export function TransactionProvider({ children = null as any, product = {} as any }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const selectTransaction = useCallback(() => setIsModalVisible(true), []);
   const close = useCallback(() => setIsModalVisible(false), []);
-  console.log(product)
+  // console.log(product)
   return (
     <TransactionContext.Provider
       value={{
@@ -49,8 +41,6 @@ export function TransactionProvider({ children = null as any, product = {} as an
         onCancel={close}
         width={450}
       >
-        {/* productAccountKey */}
-        
         {/* All product keys */}
         {Object.keys(product.product).map((value: string) => (
           <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
