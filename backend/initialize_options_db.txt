@@ -19,3 +19,15 @@ create table options_test (
   created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
+create table contracts_test (
+  id SERIAL PRIMARY KEY,
+  symbol VARCHAR(50) UNIQUE NOT NULL,
+  expiry VARCHAR(128),
+  strike NUMERIC,
+  seller_id VARCHAR(128),
+  seller_percent NUMERIC,
+  seller_volume NUMERIC,
+  buyer_id VARCHAR(128),
+  buyer_volume NUMERIC,
+  created_at TIMESTAMP NOT NULL DEFAULT now()
+};

@@ -34,7 +34,7 @@ const createBuyer = (request, response) => {
 const getSocketOptions = () => {
   return new Promise((resolve) => {
     pool.query(
-      "SELECT * FROM options_test ORDER BY id",
+      "SELECT * FROM contracts_test ORDER BY id",
       (error, results) => {
         if (error) {
           throw error;

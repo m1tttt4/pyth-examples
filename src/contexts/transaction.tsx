@@ -31,20 +31,25 @@ export function TransactionProvider({ children = null as any, product = {} as an
   const [isSubmitable, setIsSubmitable] = useState(false);
   const selectTransactionModal = useCallback(() => setIsModalVisible(true), []);
   const close = useCallback(() => setIsModalVisible(false), []);
-  
   const [ purchaseOrder, setPurchaseOrder ] = useState<PurchaseOrderForm>();
-  const [ optionId, setOptionId ] = useState({});
   const [ buyerId, setPurchaseId ] = useState<PublicKey | undefined>();
   const [ buyerPercent, setPurchasePercent ] = useState<number>();
   const [ buyerVolume, setPurchaseVolume ] = useState<number>();
   const [ buyerStrike, setPurchaseStrike ] = useState<number>();
   const [ buyerExpiry, setPurchaseExpiry ] = useState<Moment | null | undefined>();
+  const [ existingContracts, setExistingContracts ] = useState<PurchaseOrderForm[]>();
 
   const socket = useContext(SocketContext);
+  const getContractsForSymbol = useCallback(() => {
+    socket.emit("options");
+  }, []);
 
-  function handleOptionId(event: React.ChangeEvent<HTMLInputElement>) {
-    setOptionId(product.product.symbol)
-  }
+  const populateContracts = useCallback((contracts) => {
+    console.log('populateContracts');
+    setExistingContracts(contracts);
+  }, []);
+
+
   function handlePercent(value: number) {
     setPurchasePercent(value)
   }
@@ -57,7 +62,7 @@ export function TransactionProvider({ children = null as any, product = {} as an
   function handleVolume(value: number | string | undefined) {
     setPurchaseVolume(value as number)
     setPurchaseOrder({
-      "option_id": optionId,
+      "option_id": product.product.generic_symbol,
       "buyer_id": buyerId,
       "buyer_percent": buyerPercent,
       "buyer_volume": value as number
@@ -67,7 +72,7 @@ export function TransactionProvider({ children = null as any, product = {} as an
   function handleSubmitPurchase(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     event.preventDefault();
     const submitPurchaseForm = {
-      "option_id": optionId,
+      "option_id": product.product.generic_symbol,
       "buyer_id": buyerId,
       "buyer_percent": buyerPercent,
       "buyer_volume": buyerVolume,
@@ -84,7 +89,15 @@ export function TransactionProvider({ children = null as any, product = {} as an
   }
   
   useEffect(() => {
-    socket.on("TX_CONFIRMED", close)
+    // socket.emit("getContracts");
+    socket.on("TX_CONFIRMED", close);
+    socket.on("getContracts", populateContracts);
+    console.log(existingContracts);
+
+    return () => {
+      socket.off("TX_CONFIRMED", close);
+      socket.off("getContracts", populateContracts);
+    }
   })
 
   console.log(product)

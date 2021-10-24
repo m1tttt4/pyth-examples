@@ -33,14 +33,19 @@ app.post("/options", db.createBuyer);
 
 const emitOptions = () => {
   db.getSocketOptions()
-    .then((result) => io.emit("option", result))
+    .then((result) => io.emit("getContracts", result))
     .catch(console.log);
 };
 
 // connects, creates buyer, and emits top 10 options
 io.on("connection", (socket) => {
   console.log("a user connected");
-  socket.on("option", (msg) => {
+  socket.on("getContracts", () => {
+    console.log("getContracts");
+    emitOptions();
+  });
+  socket.on("createContract", (msg) => {
+    console.log(msg);
     db.createSocketBuyer(JSON.parse(msg))
       .then((_) => {
         emitOptions();

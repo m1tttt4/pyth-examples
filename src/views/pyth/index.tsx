@@ -1,6 +1,7 @@
 import React from "react";
 import { DataTable } from "../../components/DataTable";
 import { SocketContext, socket } from "../../contexts/socket"
+import "../../styles/PythView.less"
 
 export const PythView = () => {
   return (
