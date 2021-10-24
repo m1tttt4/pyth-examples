@@ -154,7 +154,7 @@ export const DataTable = () => {
                 columns={columns} 
                 onRow={(record, rowIndex) => {
                   return {
-                    onClick: (e) => { e.preventDefault(); handleClick(e) }, // click row
+                    onClick: (e) => { handleClick(e) }, // click row
                     onDoubleClick: (e) => { e.preventDefault(); },
                     onContextMenu: (e) => { e.preventDefault(); console.log('right click') }, // right button click row
                     onMouseEnter: (e) => {}, // mouse enter row

@@ -12,7 +12,7 @@ export interface TransactionButtonProps
 
 export const TransactionButton = (props: TransactionButtonProps) => {
   const { connected, connect, provider, select } = useWallet();
-  const { selectTransaction } = useTransaction();
+  const { selectTransactionModal } = useTransaction();
   const { children, disabled, ...rest } = props;
 
   // only show if wallet selected or user connected
@@ -28,7 +28,7 @@ export const TransactionButton = (props: TransactionButtonProps) => {
   if (provider) {
     return (
       <Dropdown.Button
-        onClick={connected ? selectTransaction : connect}
+        onClick={connected ? selectTransactionModal : connect}
         disabled={connected && disabled}
         overlay={menu}
         className="table-button-dropdown"
@@ -40,7 +40,7 @@ export const TransactionButton = (props: TransactionButtonProps) => {
 
   return (
     <Dropdown.Button
-      onClick={connected ? selectTransaction : connect}
+      onClick={connected ? selectTransactionModal : connect}
       disabled={connected && disabled}
       overlay={menu}
         className="table-button-dropdown"

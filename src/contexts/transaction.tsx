@@ -1,31 +1,98 @@
+import type { PublicKey } from "@solana/web3.js";
 import { Pyth } from "./../components/Icons/pyth";
-import { Button, Modal, InputNumber } from "antd";
+import type { Moment } from "moment";
+import { Button, DatePicker, Modal, Input, InputNumber, Space } from "antd";
 import React, {
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from "react";
 import sigFigs from "./../utils/sigFigs";
+import { SocketContext } from "./socket";
 
-const TransactionContext = React.createContext<{
+const TransactionModalContext = React.createContext<{
   product?: object;
-  selectTransaction: () => void;
+  selectTransactionModal: () => void;
 }>({
   product: {},
-  selectTransaction() {},
+  selectTransactionModal() {},
 });
 
+export interface PurchaseOrderForm {
+  option_id: {},
+  buyer_id: PublicKey | undefined,
+  buyer_percent: number | undefined,
+  buyer_volume: number | undefined
+}
 
 export function TransactionProvider({ children = null as any, product = {} as any }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const selectTransaction = useCallback(() => setIsModalVisible(true), []);
+  const [isSubmitable, setIsSubmitable] = useState(false);
+  const selectTransactionModal = useCallback(() => setIsModalVisible(true), []);
   const close = useCallback(() => setIsModalVisible(false), []);
-  // console.log(product)
+  
+  const [ purchaseOrder, setPurchaseOrder ] = useState<PurchaseOrderForm>();
+  const [ optionId, setOptionId ] = useState({});
+  const [ buyerId, setPurchaseId ] = useState<PublicKey | undefined>();
+  const [ buyerPercent, setPurchasePercent ] = useState<number>();
+  const [ buyerVolume, setPurchaseVolume ] = useState<number>();
+  const [ buyerStrike, setPurchaseStrike ] = useState<number>();
+  const [ buyerExpiry, setPurchaseExpiry ] = useState<Moment | null | undefined>();
+
+  const socket = useContext(SocketContext);
+
+  function handleOptionId(event: React.ChangeEvent<HTMLInputElement>) {
+    setOptionId(product.product.symbol)
+  }
+  function handlePercent(value: number) {
+    setPurchasePercent(value)
+  }
+  function handleStrike(value: number | string | undefined) {
+    setPurchaseStrike(value as number)
+  }
+  function handleExpiry(value: Moment | null | undefined) {
+    setPurchaseExpiry(value)
+  }
+  function handleVolume(value: number | string | undefined) {
+    setPurchaseVolume(value as number)
+    setPurchaseOrder({
+      "option_id": optionId,
+      "buyer_id": buyerId,
+      "buyer_percent": buyerPercent,
+      "buyer_volume": value as number
+    });
+    evaluateSubmitable();
+  }
+  function handleSubmitPurchase(event: React.MouseEvent<HTMLElement, MouseEvent>) {
+    event.preventDefault();
+    const submitPurchaseForm = {
+      "option_id": optionId,
+      "buyer_id": buyerId,
+      "buyer_percent": buyerPercent,
+      "buyer_volume": buyerVolume,
+    }
+    setPurchaseOrder(submitPurchaseForm);
+    console.log(submitPurchaseForm);
+  }
+
+  function evaluateSubmitable() {
+    // if ( optionId && buyerId && buyerPercent && buyerVolume ) {
+    if ( buyerVolume ) {
+      setIsSubmitable(true) 
+    }
+  }
+  
+  useEffect(() => {
+    socket.on("TX_CONFIRMED", close)
+  })
+
+  console.log(product)
   return (
-    <TransactionContext.Provider
+    <TransactionModalContext.Provider
       value={{
         product,
-        selectTransaction,
+        selectTransactionModal,
       }}
     >
       {children}
@@ -72,14 +139,15 @@ export function TransactionProvider({ children = null as any, product = {} as an
             {`\xB1$${sigFigs(product.price.confidence)}`}
           </div>
         </div>
-       
+        
+        {/* Input collection */}
         {/* Strike */}
         <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
           <div style={{ float: 'left', width: 'auto' }}>
             Strike: 
           </div>
           <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
-            <InputNumber />
+            <InputNumber value={buyerStrike} onChange={handleStrike}/>
           </div>
         </div>
 
@@ -89,7 +157,7 @@ export function TransactionProvider({ children = null as any, product = {} as an
             Expiry:
           </div>
           <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
-            <InputNumber />
+            <DatePicker value={buyerExpiry} onChange={handleExpiry}/>
           </div>
         </div>
 
@@ -99,25 +167,18 @@ export function TransactionProvider({ children = null as any, product = {} as an
             Quantity: 
           </div>
           <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
-            <InputNumber />
+            <InputNumber value={buyerVolume} onChange={handleVolume}/>
           </div>
         </div>
 
-        {/* Option price */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
-          <div style={{ float: 'left', width: 'auto' }}>
-            Option Price: 
-          </div>
-          <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
-            <InputNumber />
-          </div>
-        </div>
-        
         <div className="transaction-modal-wrapper-button">
           <Button
             size="large"
             type={"primary"}
             className="transaction-modal-button-buy"
+            ghost={!isSubmitable}
+            disabled={!isSubmitable}
+            onClick={handleSubmitPurchase}
           >
             <Pyth /> Buy
           </Button>
@@ -125,19 +186,22 @@ export function TransactionProvider({ children = null as any, product = {} as an
             size="large"
             type={"primary"}
             className="transaction-modal-button-sell"
+            ghost={!isSubmitable}
+            disabled={!isSubmitable}
+            onClick={handleSubmitPurchase}
           >
             Sell <Pyth />
           </Button>
         </div>
       </Modal>
-    </TransactionContext.Provider>
+    </TransactionModalContext.Provider>
   );
 }
 
 export function useTransaction() {
-  const { product, selectTransaction } = useContext(TransactionContext);
+  const { product, selectTransactionModal } = useContext(TransactionModalContext);
   return {
     product,
-    selectTransaction,
+    selectTransactionModal,
   };
 }
