@@ -32,19 +32,6 @@ export const DataTable = () => {
   const connection = useConnection();
   const columnWidth = "auto" as string;
   const columnClassName = "table-column";
-  // const [filteredInfo, sortedInfo] = useState(Object);
-  // const [order, columnKey] = useState();
-  // const handleChange = (pagination: {}, filters: {}, sorter: {}) => {
-    // filteredInfo(filters);
-    // sortedInfo(sorter);
-  // };
-  // const clearFilters = () => {
-    // filteredInfo(null);
-  // };
-  // const clearAll = () => {
-    // filteredInfo(null);
-    // sortedInfo(Function);
-  // };
 
   const columns = [
     {

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { DataTable } from "../../components/DataTable";
-import { OrderBook } from "../../components/OrderBook";
 import TransactionsView from "../../components/TransactionsView";
 import { useWallet } from "../../contexts/wallet";
 import { useConnection } from "../../contexts/connection";
@@ -10,7 +9,7 @@ export const PythView = () => {
   const [transactions, setTransactions] =
     useState<Array<SignedTransaction>>();
   const connection = useConnection();
-  const { wallet, connected, connect } = useWallet();
+  const { wallet } = useWallet();
 
   useEffect(() => {
     
@@ -28,7 +27,6 @@ export const PythView = () => {
           Prices do not refresh, yet...
         </div>
         <DataTable />
-        {/* <OrderBook /> */}
         <TransactionsView transactions={transactions} />
       </div>
     </>
