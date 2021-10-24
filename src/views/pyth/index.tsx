@@ -1,25 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { DataTable } from "../../components/DataTable";
-import TransactionsView from "../../components/TransactionsView";
-import { useWallet } from "../../contexts/wallet";
-import { useConnection } from "../../contexts/connection";
-import { getTransactions, SignedTransaction } from "../../utils/transactions";
 
 export const PythView = () => {
-  const [transactions, setTransactions] =
-    useState<Array<SignedTransaction>>();
-  const connection = useConnection();
-  const { wallet } = useWallet();
-
-  useEffect(() => {
-    
-    if (wallet!.publicKey) {
-      getTransactions(connection, wallet!.publicKey).then((trans) => {
-        setTransactions(trans);
-      });
-     }
-  });
-
   return (
     <>
       <div className="pythWrapper">
@@ -27,7 +9,6 @@ export const PythView = () => {
           Prices do not refresh, yet...
         </div>
         <DataTable />
-        <TransactionsView transactions={transactions} />
       </div>
     </>
   );
