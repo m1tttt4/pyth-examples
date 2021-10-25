@@ -12,7 +12,7 @@ export interface TransactionButtonProps
 
 export const TransactionButton = (props: TransactionButtonProps) => {
   const { connected, connect, provider, select } = useWallet();
-  const { product, selectTransaction } = useTransaction();
+  const { selectTransaction } = useTransaction();
   const { disabled } = props;
 
   // only show if wallet selected or user connected
@@ -20,7 +20,6 @@ export const TransactionButton = (props: TransactionButtonProps) => {
   const menu = (
     <Menu>
       <Menu.Item key="3" onClick={select}>
-        {product.product.symbol}
         {"Change wallet"}
       </Menu.Item>
     </Menu>
