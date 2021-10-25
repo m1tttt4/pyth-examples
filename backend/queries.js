@@ -1,40 +1,12 @@
 const pool = require("./pool");
 
-const getOptions = (request, response) => {
-  pool.query(
-    "SELECT * FROM options_test ORDER BY id",
-    (error, results) => {
-      if (error) {
-        throw error;
-      }
-      response.status(200).json(results.rows);
-    }
-  );
-};
-
-// CREATE BUYER
-const createBuyer = (request, response) => {
-  const { option_id, buyer_id, buyer_percent, buyer_volume } = request.body;
-  pool.query(
-    `INSERT INTO options_test 
-    (option_id, buyer_id, buyer_percent, buyer_volume)
-    VALUES ($1, $2, $3, $4)
-    RETURNING option_id, buyer_id, buyer_percent, buyer_volume, created_at`,
-    [option_id, buyer_id, buyer_percent, buyer_volume],
-    (error, results) => {
-      if (error) {
-        throw error;
-      }
-      response.status(201).send(results.rows);
-    }
-  );
-};
-
 /* SOCKET DB */
-const getSocketOptions = () => {
+// Gets all contracts matching underlyer's public key as a string
+const getContracts = (symbol_key) => {
   return new Promise((resolve) => {
     pool.query(
-      "SELECT * FROM contracts_test ORDER BY id",
+      "SELECT * FROM contracts_test WHERE symbol_key = $1 ORDER BY id",
+      [symbol_key],
       (error, results) => {
         if (error) {
           throw error;
@@ -44,14 +16,24 @@ const getSocketOptions = () => {
     );
   });
 };
-const createSocketBuyer = (buyer) => {
+
+// Creates a new contract with null buyer_id and buyer_volume
+const createSeller = (seller) => {
   return new Promise((resolve) => {
     pool.query(
-      `INSERT INTO options_test 
-      (option_id, buyer_id, buyer_percent, buyer_volume)
-      VALUES ($1, $2, $3, $4)
-      RETURNING option_id, buyer_id, buyer_percent, buyer_volume, created_at`,
-      [buyer.option_id, buyer.buyer_id, buyer.buyer_percent, buyer.buyer_volume],
+      `INSERT INTO contracts_test 
+      (symbol, symbol_key, expiry, strike, seller_id, seller_percent, seller_volume)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING symbol, symbol_key, expiry, strike, seller_id, seller_percent, seller_volume, created_at`,
+      [
+        seller.symbol,
+        seller.symbol_key,
+        seller.expiry,
+        seller.strike,
+        seller.seller_id,
+        seller.seller_percent,
+        seller.seller_volume
+      ],
       (error, results) => {
         if (error) {
           throw error;
@@ -63,8 +45,6 @@ const createSocketBuyer = (buyer) => {
 };
 
 module.exports = {
-  getOptions,
-  getSocketOptions,
-  createBuyer,
-  createSocketBuyer
+  getContracts,
+  createSeller,
 };

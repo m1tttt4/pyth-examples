@@ -76,66 +76,13 @@ export const DataTable = () => {
       className: `${columnClassName}`,
       render: (value: string) => (
       <>
-        <TransactionProvider product={value}>
+        <TransactionProvider product={value} wallet={wallet}>
           <TransactionButton />
         </TransactionProvider>
       </>
       ),
     },
   ];
-
-  const executeTest = () => {
-    if (!wallet) {
-      return;
-    }
-
-    const instructions: TransactionInstruction[] = [];
-    const signers: Account[] = [];
-    instructions.push(
-      new TransactionInstruction({
-        keys: [
-          {
-            // GOOG - product
-            pubkey: new PublicKey(
-              "CpPmHbFqkfejPcF8cvxyDogm32Sqo3YGMFBgv3kR1UtG"
-            ),
-            isSigner: false,
-            isWritable: false,
-          },
-          {
-            // GOOG - price
-            pubkey: new PublicKey(
-              "CZDpZ7KeMansnszdEGZ55C4HjGsMSQBzxPu6jqRm6ZrU"
-            ),
-            isSigner: false,
-            isWritable: false,
-          },
-        ],
-        programId: PYTH_HELLO_WORLD,
-      })
-    );
-    // send: 
-      // expiry: unix-timestamp,
-      // strike: float,
-      // publicKey: PublicKey,
-      // instruction: buy|sell
-      
-    sendTransaction(connection, wallet, instructions, signers).then((txid) => {
-      notify({
-        message: "Transaction executed on Solana",
-        description: (
-          <a
-            href={`https://explorer.solana.com/tx/${txid}?cluster=devnet`}
-            // eslint-disable-next-line react/jsx-no-target-blank
-            target="_blank"
-          >
-            Explorer Link
-          </a>
-        ),
-        type: "success",
-      });
-    });
-  };
 
   const products: object[] = useMemo(
     () =>
@@ -144,6 +91,7 @@ export const DataTable = () => {
         .map((s) => symbolMap[s]),
     [symbolMap]
   );
+  console.log(products[0])
   return (
     <>
       <div className="tableWrapper">
@@ -162,11 +110,6 @@ export const DataTable = () => {
                   };
                 }}
             />
-          </Col>
-          <Col span={24}>
-            <Button onClick={connected ? executeTest : connect}>
-              {connected ? "Execute Test Transaction" : "Connect Wallet"}
-            </Button>
           </Col>
           <Col span={24}>
             <Link to="/">

@@ -11,6 +11,7 @@ import React, {
 import sigFigs from "./../utils/sigFigs";
 import { SocketContext } from "./socket";
 import { WalletAdapter } from "./wallet";
+import { useTransaction } from "../../contexts/transaction";
 
 const TransactionModalContext = React.createContext<{
   product?: object;
@@ -227,12 +228,4 @@ export function TransactionProvider({
       </Modal>
     </TransactionModalContext.Provider>
   );
-}
-
-export function useTransaction() {
-  const { product, selectTransactionModal } = useContext(TransactionModalContext);
-  return {
-    product,
-    selectTransactionModal,
-  };
 }

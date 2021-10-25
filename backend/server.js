@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const db = require('./queries');
+const queries = require('./queries');
 const app = express();
 const port = 4000;
 const socketPort = 8001;
@@ -22,33 +22,37 @@ app.use(
 );
 app.get('/', (request, response) => {
   response.sendFile('./index.html', { root: '.' });
-  /* response.json({ info: 'Our app is up and running' }) */
 });
 app.listen(port, () => {
   console.log(`App running on *:${port}.`)
 });
 
-app.get("/options", db.getOptions);
-app.post("/options", db.createBuyer);
-
-const emitOptions = () => {
-  db.getSocketOptions()
+const emitContracts = () => {
+  queries.getContracts()
     .then((result) => io.emit("getContracts", result))
     .catch(console.log);
 };
 
-// connects, creates buyer, and emits top 10 options
+/*
+ * Listens for:
+ *   "connection"
+ *     "getContracts" -> emitContracts() -> queries.getContracts() -then-emits->
+ *         "getContracts", result
+ *     "createContract" -> queries.createSeller(JSON.parse(contract)) -then->
+ *         emitContracts() -> queries.getContracts() -then-emits->
+ *         "getContracts", result
+*/
 io.on("connection", (socket) => {
   console.log("a user connected");
-  socket.on("getContracts", () => {
-    console.log("getContracts");
-    emitOptions();
+  socket.on("getContracts", (symbol_key) => {
+    console.log("getContracts", symbol_key);
+    emitContracts(symbol_key);
   });
-  socket.on("createContract", (msg) => {
-    console.log(msg);
-    db.createSocketBuyer(JSON.parse(msg))
+  socket.on("createContract", (contract) => {
+    console.log("createContract", contract);
+    queries.createSeller(JSON.parse(contract))
       .then((_) => {
-        emitOptions();
+        emitContracts();
       })
       .catch((err) => io.emit(err));
   });
