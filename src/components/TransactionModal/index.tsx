@@ -12,7 +12,7 @@ import sigFigs from "../../utils/sigFigs";
 import { SocketContext } from "../../contexts/socket";
 import { useWallet } from "../../contexts/wallet";
 import { useTransaction } from "../../contexts/transaction";
-
+import { ContractsTable } from "../ContractsTable";
 
 export interface AvailableContractForm {
   symbol: string | undefined,
@@ -56,7 +56,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
   const [ inputPercent, setInputPercent ] = useState<number | undefined>();
   const [ inputVolume, setInputVolume ] = useState<number | undefined>();
   const [ existingContracts, setExistingContracts ] = useState<AvailableContractForm[]>();
-  const [ matchingContracts, setMatchingContracts ] = useState<AvailableContractForm[]>();
+  const [ matchingContracts, setMatchingContracts ] = useState<AvailableContractForm[]>([]);
 
   const [ newAvailableContract, setNewAvailableContract ] = useState<AvailableContractForm>({
     symbol: productSymbol,
@@ -122,12 +122,41 @@ export const TransactionModal = (props: TransactionModalProps) => {
   }
 
   function evaluateSubmitable(form: AvailableContractForm) {
-    if ( form.symbol && form.symbol_key && form.expiry && form.strike && form.seller_id && form.seller_percent && form.seller_volume  ) {
+    if ( 
+      !form.expiry ||
+      typeof form.expiry !== "object" ||
+      !Object.getPrototypeOf(form.expiry).hasOwnProperty("format") ||
+      matchingContracts.length > 0
+    ){
+      setIsSubmitable(false);
+      return
+    }
+    if ( 
+        form.symbol &&
+        form.symbol_key &&
+        form.expiry &&
+        form.strike &&
+        form.seller_id &&
+        form.seller_percent &&
+        form?.seller_percent! >= 0 &&
+        form?.seller_percent! <= 100 &&
+        form?.seller_volume &&
+        form?.seller_volume! > 0
+    ) {
+      console.log(form.expiry)
       const submitContract = {
         ...form,
-        expiry: (newAvailableContract['expiry']! as Moment).format('YYYYMMDD')
+        expiry: (form.expiry as Moment).format('YYYYMMDD')
       };
       setIsSubmitable(true) 
+      socket.emit("findMatchingContracts", submitContract)
+    } else {
+      console.log(form.expiry)
+      const submitContract = {
+        ...form,
+        expiry: (form.expiry as Moment).format('YYYYMMDD')
+      };
+      setIsSubmitable(false)
       socket.emit("findMatchingContracts", submitContract)
     }
   }
@@ -159,6 +188,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
           {productAccountKey}
         </div>
       }  
+      className="transaction-modal"
       okText="Connect"
       visible={isModalVisible}
       okButtonProps={{ style: { display: "none" } }}
@@ -241,28 +271,20 @@ export const TransactionModal = (props: TransactionModalProps) => {
           size="large"
           type={"primary"}
           className="transaction-modal-button-buy"
-          ghost={isSubmitable}
+          ghost={!isSubmitable}
+          disabled={!isSubmitable}
           onClick={handleSubmitPurchase}
         >
-          <Pyth /> Buy
-        </Button>
-        <Button
-          size="large"
-          type={"primary"}
-          className="transaction-modal-button-sell"
-          ghost={isSubmitable}
-          onClick={handleSubmitPurchase}
-        >
-          Sell <Pyth />
+          <Pyth /> List new contract
         </Button>
       </div>
       <div className="contracts-matching">
         Matching contracts for {productSymbol}
-        { JSON.stringify(matchingContracts) }
+        <ContractsTable contracts={matchingContracts} handleSubmitPurchase={handleSubmitPurchase}/>
       </div>
       <div className="contracts-existing">
         All contracts for {productSymbol}
-        { JSON.stringify(existingContracts) }
+        <ContractsTable contracts={existingContracts} handleSubmitPurchase={handleSubmitPurchase}/>
       </div>
     </Modal>
   );
