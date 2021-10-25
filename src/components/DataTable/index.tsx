@@ -9,8 +9,9 @@ import usePyth from "../../hooks/usePyth";
 import { PYTH_HELLO_WORLD } from "../../utils/ids";
 import { notify } from "../../utils/notifications";
 import sigFigs from "../../utils/sigFigs";
-import { TransactionProvider } from "../../contexts/transaction";
+import { ProductObject, TransactionProvider } from "../../contexts/transaction";
 import { TransactionButton } from "../../components/TransactionButton";
+import { TransactionModal } from "../../components/TransactionModal";
 
 const handleClick = (e: React.MouseEvent<HTMLElement>) => {
   switch (e.detail) {
@@ -26,10 +27,10 @@ const handleClick = (e: React.MouseEvent<HTMLElement>) => {
   }
 };
 
+
+
 export const DataTable = () => {
   const { symbolMap } = usePyth();
-  const { wallet, connected, connect } = useWallet();
-  const connection = useConnection();
   const columnWidth = "auto" as string;
   const columnClassName = "table-column";
 
@@ -74,16 +75,23 @@ export const DataTable = () => {
       align: "right" as "right",
       width: `${columnWidth}`,
       className: `${columnClassName}`,
-      render: (value: string) => (
+      render: (value: ProductObject) => (
       <>
-        <TransactionProvider product={value} wallet={wallet}>
+        <TransactionProvider product={value} >
           <TransactionButton />
+          <TransactionModal />
         </TransactionProvider>
       </>
       ),
     },
   ];
 
+      // <>
+        // <TransactionProvider product={value} >
+          // <TransactionButton />
+          // <TransactionModal />
+        // </TransactionProvider>
+      // </>
   const products: object[] = useMemo(
     () =>
       Object.keys(symbolMap)
@@ -91,7 +99,7 @@ export const DataTable = () => {
         .map((s) => symbolMap[s]),
     [symbolMap]
   );
-  console.log(products[0])
+  // console.log(products)
   return (
     <>
       <div className="tableWrapper">

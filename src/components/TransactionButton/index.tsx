@@ -1,4 +1,4 @@
-import { Button, Dropdown, Menu } from "antd";
+import { Dropdown, Menu } from "antd";
 import { ButtonProps } from "antd/lib/button";
 import React from "react";
 import { LABELS } from "../../constants";
@@ -12,14 +12,15 @@ export interface TransactionButtonProps
 
 export const TransactionButton = (props: TransactionButtonProps) => {
   const { connected, connect, provider, select } = useWallet();
-  const { selectTransactionModal } = useTransaction();
-  const { children, disabled, ...rest } = props;
+  const { product, selectTransaction } = useTransaction();
+  const { disabled } = props;
 
   // only show if wallet selected or user connected
 
   const menu = (
     <Menu>
       <Menu.Item key="3" onClick={select}>
+        {product.product.symbol}
         {"Change wallet"}
       </Menu.Item>
     </Menu>
@@ -28,7 +29,7 @@ export const TransactionButton = (props: TransactionButtonProps) => {
   if (provider) {
     return (
       <Dropdown.Button
-        onClick={connected ? selectTransactionModal : connect}
+        onClick={connected ? selectTransaction : connect}
         disabled={connected && disabled}
         overlay={menu}
         className="table-button-dropdown"
@@ -40,7 +41,7 @@ export const TransactionButton = (props: TransactionButtonProps) => {
 
   return (
     <Dropdown.Button
-      onClick={connected ? selectTransactionModal : connect}
+      onClick={connected ? selectTransaction : connect}
       disabled={connected && disabled}
       overlay={menu}
         className="table-button-dropdown"
