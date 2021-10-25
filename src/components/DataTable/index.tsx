@@ -85,13 +85,6 @@ export const DataTable = () => {
       ),
     },
   ];
-
-      // <>
-        // <TransactionProvider product={value} >
-          // <TransactionButton />
-          // <TransactionModal />
-        // </TransactionProvider>
-      // </>
   const products: object[] = useMemo(
     () =>
       Object.keys(symbolMap)

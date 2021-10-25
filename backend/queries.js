@@ -1,5 +1,6 @@
 const pool = require("./pool");
 
+
 /* SOCKET DB */
 // Gets all contracts matching underlyer's public key as a string
 const getContracts = (symbol_key) => {
@@ -11,6 +12,7 @@ const getContracts = (symbol_key) => {
         if (error) {
           throw error;
         }
+        console.log(results.rows)
         resolve(results.rows);
       }
     );
@@ -18,7 +20,34 @@ const getContracts = (symbol_key) => {
 };
 
 // Creates a new contract with null buyer_id and buyer_volume
+const findMatchingContracts = (contract) => {
+  console.log("findMatchingContracts", contract);
+  return new Promise((resolve) => {
+    pool.query(
+      `SELECT * FROM contracts_test WHERE
+      symbol = $1 and symbol_key = $2 and expiry = $3 and strike = $4 and seller_percent = $5 and seller_volume >= $6
+      ORDER BY id`,
+      [
+        contract.symbol,
+        contract.symbol_key,
+        contract.expiry,
+        contract.strike,
+        contract.seller_percent,
+        contract.seller_volume
+      ],
+      (error, results) => {
+        if (error) {
+          throw error;
+        }
+        console.log("Matched: ", results.rows);
+        resolve(results.rows);
+      }
+    );
+  });
+};
+
 const createSeller = (seller) => {
+  console.log("createSeller", seller);
   return new Promise((resolve) => {
     pool.query(
       `INSERT INTO contracts_test 
@@ -45,6 +74,7 @@ const createSeller = (seller) => {
 };
 
 module.exports = {
+  findMatchingContracts,
   getContracts,
   createSeller,
 };

@@ -27,8 +27,8 @@ app.listen(port, () => {
   console.log(`App running on *:${port}.`)
 });
 
-const emitContracts = () => {
-  queries.getContracts()
+const emitContracts = (symbol_key) => {
+  queries.getContracts(symbol_key)
     .then((result) => io.emit("getContracts", result))
     .catch(console.log);
 };
@@ -48,9 +48,14 @@ io.on("connection", (socket) => {
     console.log("getContracts", symbol_key);
     emitContracts(symbol_key);
   });
+  socket.on("findMatchingContracts", (contract) => {
+    console.log("findMatchingContracts", contract);
+    queries.findMatchingContracts(contract).then(
+      (result) => io.emit("findMatchingContracts", result)).catch(console.log);
+  });
   socket.on("createContract", (contract) => {
-    console.log("createContract", contract);
-    queries.createSeller(JSON.parse(contract))
+    console.log("createContract");
+    queries.createSeller(contract)
       .then((_) => {
         emitContracts();
       })

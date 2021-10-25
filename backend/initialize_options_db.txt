@@ -21,13 +21,13 @@ create table options_test (
 
 create table contracts_test (
   id SERIAL PRIMARY KEY,
-  symbol VARCHAR(50) UNIQUE NOT NULL,
-  symbol_key VARCHAR(50) UNIQUE NOT NULL,
-  expiry VARCHAR(128),
-  strike NUMERIC,
-  seller_id VARCHAR(128),
-  seller_percent NUMERIC,
-  seller_volume NUMERIC,
+  symbol VARCHAR(50) NOT NULL,
+  symbol_key VARCHAR(50) NOT NULL,
+  expiry VARCHAR(128) NOT NULL,
+  strike NUMERIC NOT NULL,
+  seller_id VARCHAR(128) NOT NULL,
+  seller_percent NUMERIC NOT NULL,
+  seller_volume NUMERIC NOT NULL,
   buyer_id VARCHAR(128),
   buyer_volume NUMERIC,
   created_at TIMESTAMP NOT NULL DEFAULT now()

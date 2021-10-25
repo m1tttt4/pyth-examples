@@ -6,7 +6,6 @@ import React, {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useState
 } from "react";
 import sigFigs from "../../utils/sigFigs";
@@ -16,16 +15,18 @@ import { useTransaction } from "../../contexts/transaction";
 
 
 export interface AvailableContractForm {
-  symbol: string,
-  expiry: Moment | string,
-  strike: number,
-  seller_id: PublicKey,
-  seller_percent: number,
+  symbol: string | undefined,
+  symbol_key: string,
+  expiry: Moment | null | undefined | string,
+  strike: number | undefined,
+  seller_id: string | undefined,
+  seller_percent: number | undefined,
   seller_volume: number | undefined
 }
 
 export interface PurchaseContractForm {
   symbol: string,
+  symbol_key: string,
   expiry: Moment | null | undefined,
   strike: number | undefined,
   buyer_id: PublicKey,
@@ -40,77 +41,114 @@ export interface TransactionModalProps {
 export const TransactionModal = (props: TransactionModalProps) => {
   const [isSubmitable, setIsSubmitable] = useState(false);
   const { wallet } = useWallet();
+  const userWalletAddress = wallet?.publicKey?.toBase58();
+
   const { isModalVisible, product, selectTransaction } = useTransaction();
-  // console.log( isModalVisible, product, selectTransaction )
   const productSymbol = product.product.symbol;
   const productPrice = product.price.price;
   const productAccountKey = product!.price!.productAccountKey!.toBase58();
   const productConfidence = product.price.confidence;
 
 
-  const [ purchaseOrder, setPurchaseOrder ] = useState<PurchaseContractForm>();
+  const [ purchaseMatchOrder, setPurchaseMatchOrder ] = useState<PurchaseContractForm>();
   const [ inputExpiry, setInputExpiry ] = useState<Moment | null | undefined>();
-  const [ inputStrike, setInputStrike ] = useState<number>();
-  const [ inputPercent, setInputPercent ] = useState<number>();
-  const [ inputVolume, setInputVolume ] = useState<number>();
+  const [ inputStrike, setInputStrike ] = useState<number | undefined>();
+  const [ inputPercent, setInputPercent ] = useState<number | undefined>();
+  const [ inputVolume, setInputVolume ] = useState<number | undefined>();
   const [ existingContracts, setExistingContracts ] = useState<AvailableContractForm[]>();
+  const [ matchingContracts, setMatchingContracts ] = useState<AvailableContractForm[]>();
 
+  const [ newAvailableContract, setNewAvailableContract ] = useState<AvailableContractForm>({
+    symbol: productSymbol,
+    symbol_key: productAccountKey,
+    expiry: inputExpiry,
+    strike: inputStrike,
+    seller_id: userWalletAddress,
+    seller_percent: inputPercent,
+    seller_volume: inputVolume
+  });
+  console.log(newAvailableContract)
   const socket = useContext(SocketContext);
+  
   const getContracts = useCallback(() => {
-    // console.log("getContracts", product);
     socket.emit("getContracts", productAccountKey);
-  }, []);
+  }, [socket, productAccountKey]);
+  
   const populateContracts = useCallback((contracts) => {
-    // console.log('populateContracts', contracts);
     setExistingContracts(contracts);
   }, [setExistingContracts]);
 
+  const updateNewContract = useCallback(() => {
+    setNewAvailableContract({
+      ...newAvailableContract,
+      symbol: productSymbol,
+      symbol_key: productAccountKey,
+      seller_id: userWalletAddress
+    });
+  }, [setNewAvailableContract, newAvailableContract, productSymbol, productAccountKey, userWalletAddress]);
 
-  function handlePercent(value: number) {
-    setInputPercent(value)
+  const handleMatchingContracts = useCallback((contracts) => {
+    setMatchingContracts(contracts);
+  }, [setMatchingContracts]);
+
+  function handlePercent(value: number | string | undefined) {
+    setInputPercent(value as number)
+    setNewAvailableContract({ ...newAvailableContract, seller_percent: value as number });
+    evaluateSubmitable({ ...newAvailableContract, seller_percent: value as number });
   }
   function handleStrike(value: number | string | undefined) {
     setInputStrike(value as number)
+    setNewAvailableContract({ ...newAvailableContract, strike: value as number });
+    evaluateSubmitable({ ...newAvailableContract, strike: value as number });
   }
   function handleExpiry(value: Moment | null | undefined) {
-    setInputExpiry(value)
+    setInputExpiry((value as Moment));
+    setNewAvailableContract({ ...newAvailableContract, expiry: (value as Moment)});
+    evaluateSubmitable({ ...newAvailableContract, expiry: (value as Moment)});
   }
   function handleVolume(value: number | string | undefined) {
-    setInputVolume(value as number)
+    setInputVolume(value as number);
+    setNewAvailableContract({ ...newAvailableContract, seller_volume: value as number });
+    evaluateSubmitable({ ...newAvailableContract, seller_volume: value as number });
   }
   function handleSubmitPurchase(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     event.preventDefault();
-    const submitPurchaseForm = {
-      "symbol": productSymbol,
-      "expiry": inputExpiry,
-      "strike": inputStrike,
-      "buyer_id": wallet!.publicKey!.toBase58(),
-      "buyer_percent": inputPercent,
-      "buyer_volume": inputVolume,
-    }
-    // setPurchaseOrder(submitPurchaseForm);
-    console.log(submitPurchaseForm);
+    const submitContract = {
+      ...newAvailableContract,
+      expiry: (newAvailableContract['expiry']! as Moment).format('YYYYMMDD')
+    };
+    console.log("Submitting: ", submitContract);
+    socket.emit("createContract", submitContract);
   }
 
-  function evaluateSubmitable() {
-    // if ( optionId && buyerId && buyerPercent && buyerVolume ) {
-    if ( inputVolume ) {
+  function evaluateSubmitable(form: AvailableContractForm) {
+    if ( form.symbol && form.symbol_key && form.expiry && form.strike && form.seller_id && form.seller_percent && form.seller_volume  ) {
+      const submitContract = {
+        ...form,
+        expiry: (newAvailableContract['expiry']! as Moment).format('YYYYMMDD')
+      };
       setIsSubmitable(true) 
+      socket.emit("findMatchingContracts", submitContract)
     }
   }
+
 
   
   useEffect(() => {
     socket.on("TX_CONFIRMED", selectTransaction);
     socket.on("getContracts", populateContracts);
-    // console.log("Modal useEffect", productSymbol)
+    socket.on("findMatchingContracts", handleMatchingContracts);
     getContracts();
+    updateNewContract();
 
     return () => {
       socket.off("TX_CONFIRMED", selectTransaction);
       socket.off("getContracts", populateContracts);
+      socket.off("findMatchingContracts", handleMatchingContracts);
     }
   }, [getContracts, populateContracts, product, selectTransaction, socket])
+  // }, [getContracts, populateContracts, product, updateNewContract, selectTransaction, socket])
+  // TODO: fix this
 
 
   // console.log(product)
@@ -188,13 +226,22 @@ export const TransactionModal = (props: TransactionModalProps) => {
         </div>
       </div>
 
+      {/* Percent */}
+      <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
+        <div style={{ float: 'left', width: 'auto' }}>
+          Percent Chance: 
+        </div>
+        <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
+          <InputNumber value={inputPercent} onChange={handlePercent}/>
+        </div>
+      </div>
+
       <div className="transaction-modal-wrapper-button">
         <Button
           size="large"
           type={"primary"}
           className="transaction-modal-button-buy"
-          ghost={!isSubmitable}
-          disabled={!isSubmitable}
+          ghost={isSubmitable}
           onClick={handleSubmitPurchase}
         >
           <Pyth /> Buy
@@ -203,14 +250,18 @@ export const TransactionModal = (props: TransactionModalProps) => {
           size="large"
           type={"primary"}
           className="transaction-modal-button-sell"
-          ghost={!isSubmitable}
-          disabled={isSubmitable}
+          ghost={isSubmitable}
           onClick={handleSubmitPurchase}
         >
           Sell <Pyth />
         </Button>
       </div>
+      <div className="contracts-matching">
+        Matching contracts for {productSymbol}
+        { JSON.stringify(matchingContracts) }
+      </div>
       <div className="contracts-existing">
+        All contracts for {productSymbol}
         { JSON.stringify(existingContracts) }
       </div>
     </Modal>
