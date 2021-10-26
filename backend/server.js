@@ -36,11 +36,12 @@ const emitContracts = (symbol_key) => {
 /*
  * Listens for:
  *   "connection"
- *     "getContracts" -> emitContracts() -> queries.getContracts() -then-emits->
- *         "getContracts", result
- *     "createContract" -> queries.createSeller(JSON.parse(contract)) -then->
- *         emitContracts() -> queries.getContracts() -then-emits->
- *         "getContracts", result
+ *     "getContracts(symbol_key)" -> emitContracts(symbol_key)
+ *         -> queries.getContracts(symbol_key) -then-emits-> "getContracts", result
+ *     "createContract(contract)" -> queries.createSeller(contract) -then->
+ *         emitContracts(contract.symbol_key) -> queries.getContracts(contracts.symbol_key)
+ *         -then-emits-> "getContracts", result
+ *     "findMatchingContracts" 
 */
 io.on("connection", (socket) => {
   console.log("a user connected");
@@ -54,10 +55,10 @@ io.on("connection", (socket) => {
       (result) => io.emit("findMatchingContracts", result)).catch(console.log);
   });
   socket.on("createContract", (contract) => {
-    console.log("createContract");
+    console.log("createContract", contract.symbol_key);
     queries.createSeller(contract)
       .then((_) => {
-        emitContracts();
+        emitContracts(contract.symbol_key);
       })
       .catch((err) => io.emit(err));
   });

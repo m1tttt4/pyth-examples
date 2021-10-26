@@ -2,7 +2,7 @@ const pool = require("./pool");
 
 
 /* SOCKET DB */
-// Gets all contracts matching underlyer's public key as a string
+// Gets all contracts matching public key as a string
 const getContracts = (symbol_key) => {
   return new Promise((resolve) => {
     pool.query(

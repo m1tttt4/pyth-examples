@@ -73,7 +73,6 @@ export const ContractsTable = (props: ContractsTableProps) => {
       ),
     },
   ];
-  console.log(columns,props)
   const contracts: object[] = useMemo(
     () =>
       Object.keys(props!.contracts!)
