@@ -29,12 +29,13 @@ export interface TransactionModalProps {
 }
 
 export const TransactionModal = (props: TransactionModalProps) => {
-  const [isSubmitable, setIsSubmitable] = useState(false);
-  const { wallet } = useWallet();
-  console.log(wallet);
-  const userWalletAddress = wallet?.publicKey?.toBase58();
-
+  const [isContractListable, setContractListable] = useState(false);
+  const [isContractMatchable, setContractMacthable] = useState(false);
   const { isModalVisible, product, selectTransaction } = useTransaction();
+  
+  const { wallet } = useWallet();
+
+  const userWalletAddress = wallet?.publicKey?.toBase58();
   const productSymbol = product.product.symbol;
   const productPrice = product.price.price;
   const productAccountKey = product!.price!.productAccountKey!.toBase58();
@@ -42,10 +43,10 @@ export const TransactionModal = (props: TransactionModalProps) => {
 
 
   const [ inputExpiry, setInputExpiry ] = useState<Moment | null | undefined>();
-  const [ inputStrike, setInputStrike ] = useState<number | undefined>();
-  const [ inputPercent, setInputPercent ] = useState<number | undefined>();
-  const [ inputVolume, setInputVolume ] = useState<number | undefined>();
-  const [ existingContracts, setExistingContracts ] = useState<AvailableContractForm[]>();
+  const [ inputStrike, setInputStrike ] = useState<number | undefined>(productPrice);
+  const [ inputPercent, setInputPercent ] = useState<number | undefined>(2);
+  const [ inputVolume, setInputVolume ] = useState<number | undefined>(3);
+  const [ existingContracts, setExistingContracts ] = useState<AvailableContractForm[]>([]);
   const [ matchingContracts, setMatchingContracts ] = useState<AvailableContractForm[]>([]);
 
   const [ newAvailableContract, setNewAvailableContract ] = useState<AvailableContractForm>({
@@ -57,29 +58,9 @@ export const TransactionModal = (props: TransactionModalProps) => {
     seller_percent: inputPercent,
     seller_volume: inputVolume
   });
-  // console.log(newAvailableContract)
+  
   const socket = useContext(SocketContext);
   
-  const getContracts = useCallback(() => {
-    socket.emit("getContracts", productAccountKey);
-  }, [socket, productAccountKey]);
-  
-  const populateContracts = useCallback((contracts) => {
-    setExistingContracts(contracts);
-  }, [setExistingContracts]);
-
-  const updateNewContract = useCallback(() => {
-    setNewAvailableContract({
-      ...newAvailableContract,
-      symbol: productSymbol,
-      symbol_key: productAccountKey,
-      seller_id: userWalletAddress
-    });
-  }, [setNewAvailableContract, newAvailableContract, productSymbol, productAccountKey, userWalletAddress]);
-
-  const handleMatchingContracts = useCallback((contracts) => {
-    setMatchingContracts(contracts);
-  }, [setMatchingContracts]);
 
   function handlePercent(value: number | string | undefined) {
     setInputPercent(value as number)
@@ -98,22 +79,23 @@ export const TransactionModal = (props: TransactionModalProps) => {
     setNewAvailableContract({ ...newAvailableContract, expiry: (value as Moment)});
     evaluateSubmitable({ ...newAvailableContract, expiry: (value as Moment)});
   }
+
   function handleVolume(value: number | string | undefined) {
     setInputVolume(value as number);
     setNewAvailableContract({ ...newAvailableContract, seller_volume: value as number });
     evaluateSubmitable({ ...newAvailableContract, seller_volume: value as number });
   }
+
   function handleSubmitPurchase(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     event.preventDefault();
     evaluateSubmitable(newAvailableContract);
-    if (isSubmitable) {
-      const submitContract = {
-        ...newAvailableContract,
-        expiry: (newAvailableContract['expiry']! as Moment).format('YYYYMMDD')
-      };
-      console.log("Submitting: ", submitContract);
-      socket.emit("createContract", submitContract);
-    }
+    if ( isContractListable === false ) { return };
+    const submitContract = {
+      ...newAvailableContract,
+      expiry: (newAvailableContract['expiry']! as Moment).format('YYYYMMDD')
+    };
+    console.log("Submitting: ", submitContract);
+    socket.emit("createContract", submitContract);
   }
 
   function evaluateSubmitable(form: AvailableContractForm) {
@@ -123,12 +105,13 @@ export const TransactionModal = (props: TransactionModalProps) => {
       !Object.getPrototypeOf(form.expiry).hasOwnProperty("format") ||
       matchingContracts.length > 0
     ){
-      setIsSubmitable(false);
+      console.log('evaluateSubmitable - bad expiry or match found: ', form)
+      setContractListable(false);
+      getContracts(form.symbol_key)
       return
-    }
+    };
+
     if ( 
-        form.symbol &&
-        form.symbol_key &&
         form.expiry &&
         form.strike &&
         form.seller_id &&
@@ -138,42 +121,81 @@ export const TransactionModal = (props: TransactionModalProps) => {
         form?.seller_volume &&
         form?.seller_volume! > 0
     ) {
-      console.log(form.expiry)
+      console.log('evaluateSubmitable - looks good: ', form)
       const submitContract = {
         ...form,
         expiry: (form.expiry as Moment).format('YYYYMMDD')
       };
-      setIsSubmitable(true) 
+      setContractListable(true) 
       socket.emit("findMatchingContracts", submitContract)
     } else {
-      console.log(form.expiry)
-      const submitContract = {
-        ...form,
-        expiry: (form.expiry as Moment).format('YYYYMMDD')
-      };
-      setIsSubmitable(false)
-      socket.emit("findMatchingContracts", submitContract)
-    }
-  }
+      console.log('evaluateSubmitable - looks bad: ', form)
+      setContractListable(false)
+      getContracts(form.symbol_key)
+    };
+  };
+
+  const submitContract = useCallback((contract) => {
+
+  }, []);
+
+  const getContracts = useCallback((productAccountKey) => {
+    console.log('getContracts', productSymbol)
+    socket.emit("getContracts", productAccountKey);
+  }, [socket, productSymbol]);
+  
+  const populateContracts = useCallback((contracts) => {
+    console.log('populateContracts', contracts)
+    setExistingContracts(contracts);
+  }, [setExistingContracts]);
 
 
+  const populateMatchingContracts = useCallback((contracts) => {
+    console.log('populateMatchingContracts', contracts)
+    setMatchingContracts(contracts);
+    setExistingContracts(contracts);
+  }, [setMatchingContracts, setExistingContracts]);
   
   useEffect(() => {
+    if (isModalVisible !== true) { return };
+    setNewAvailableContract({
+      symbol: productSymbol,
+      symbol_key: productAccountKey,
+      expiry: inputExpiry,
+      strike: inputStrike,
+      seller_id: userWalletAddress,
+      seller_percent: inputPercent,
+      seller_volume: inputVolume
+    })
+
+    
     socket.on("TX_CONFIRMED", selectTransaction);
     socket.on("getContracts", populateContracts);
-    socket.on("findMatchingContracts", handleMatchingContracts);
-    getContracts();
-    updateNewContract();
+    socket.on("findMatchingContracts", populateMatchingContracts);
+    getContracts(productAccountKey);
+    console.log('useEffectOn', productSymbol)
 
     return () => {
+      console.log('useEffectOff', productSymbol)
       socket.off("TX_CONFIRMED", selectTransaction);
       socket.off("getContracts", populateContracts);
-      socket.off("findMatchingContracts", handleMatchingContracts);
+      socket.off("findMatchingContracts", populateContracts);
     }
-  }, [getContracts, populateContracts, product, selectTransaction, socket])
-  // }, [getContracts, populateContracts, product, updateNewContract, selectTransaction, socket])
-  // TODO: fix this
-
+  }, [
+    inputExpiry,
+    inputPercent,
+    inputStrike,
+    inputVolume,
+    userWalletAddress,
+    productAccountKey,
+    productSymbol,
+    isModalVisible,
+    getContracts,
+    populateContracts,
+    populateMatchingContracts,
+    selectTransaction,
+    socket
+  ])
 
   // console.log(product)
   return (
@@ -266,8 +288,8 @@ export const TransactionModal = (props: TransactionModalProps) => {
           size="large"
           type={"primary"}
           className="transaction-modal-button-buy"
-          ghost={!isSubmitable}
-          disabled={!isSubmitable}
+          ghost={!isContractListable}
+          disabled={!isContractListable}
           onClick={handleSubmitPurchase}
         >
           <Pyth /> List new contract
@@ -283,7 +305,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
 
       <div className="contracts-existing">
         All contracts for {productSymbol}
-        <ContractsTable contracts={existingContracts} handleSubmitPurchase={handleSubmitPurchase}/>
+        <ContractsTable isContractMatchable={isContractMatchable} contracts={existingContracts} handleSubmitPurchase={handleSubmitPurchase}/>
       </div>
     </Modal>
   );

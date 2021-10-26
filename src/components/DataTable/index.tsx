@@ -77,7 +77,7 @@ export const DataTable = () => {
       className: `${columnClassName}`,
       render: (value: ProductObject) => (
       <>
-        <TransactionProvider product={value} >
+        <TransactionProvider product={value} key={value.price.productAccountKey!.toBase58()}>
           <TransactionButton />
           <TransactionModal />
         </TransactionProvider>

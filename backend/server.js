@@ -45,15 +45,18 @@ const emitContracts = (symbol_key) => {
 */
 io.on("connection", (socket) => {
   console.log("a user connected");
+  
   socket.on("getContracts", (symbol_key) => {
     console.log("getContracts", symbol_key);
     emitContracts(symbol_key);
   });
+  
   socket.on("findMatchingContracts", (contract) => {
     console.log("findMatchingContracts", contract);
     queries.findMatchingContracts(contract).then(
       (result) => io.emit("findMatchingContracts", result)).catch(console.log);
   });
+
   socket.on("createContract", (contract) => {
     console.log("createContract", contract.symbol_key);
     queries.createSeller(contract)
@@ -62,7 +65,7 @@ io.on("connection", (socket) => {
       })
       .catch((err) => io.emit(err));
   });
-  // close event when user disconnects from app
+  
   socket.on("disconnect", () => {
     console.log("user disconnected");
   });

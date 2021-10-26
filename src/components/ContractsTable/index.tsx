@@ -14,7 +14,8 @@ import { Pyth } from "../Icons/pyth";
 
 export interface ContractsTableProps {
   contracts: AvailableContractForm[] | undefined,
-  handleSubmitPurchase: (event: React.MouseEvent<HTMLElement, MouseEvent>) => void
+  handleSubmitPurchase: (event: React.MouseEvent<HTMLElement, MouseEvent>) => void,
+  isContractMatchable: boolean
 }
 
 export const ContractsTable = (props: ContractsTableProps) => {
@@ -65,6 +66,8 @@ export const ContractsTable = (props: ContractsTableProps) => {
             type={"primary"}
             className="transaction-modal-button-sell"
             onClick={props.handleSubmitPurchase}
+            ghost={!props.isContractMatchable}
+            disabled={!props.isContractMatchable}
           >
             <Pyth />
           </Button>
