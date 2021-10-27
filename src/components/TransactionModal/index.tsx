@@ -1,6 +1,7 @@
 import type { PublicKey } from "@solana/web3.js";
 import { Pyth } from "../Icons/pyth";
 import type { Moment } from "moment";
+import moment from "moment";
 import { Button, DatePicker, Modal, Input, InputNumber } from "antd";
 import React, {
   useCallback,
@@ -41,11 +42,10 @@ export const TransactionModal = (props: TransactionModalProps) => {
   const productAccountKey = product!.price!.productAccountKey!.toBase58();
   const productConfidence = product.price.confidence;
 
-
-  const [ inputExpiry, setInputExpiry ] = useState<Moment | null | undefined>();
+  const [ inputExpiry, setInputExpiry ] = useState<Moment | null | undefined>(moment());
   const [ inputStrike, setInputStrike ] = useState<number | undefined>(productPrice);
-  const [ inputPercent, setInputPercent ] = useState<number | undefined>(2);
-  const [ inputVolume, setInputVolume ] = useState<number | undefined>(3);
+  const [ inputPercent, setInputPercent ] = useState<number | undefined>(0);
+  const [ inputVolume, setInputVolume ] = useState<number | undefined>(0);
   const [ existingContracts, setExistingContracts ] = useState<AvailableContractForm[]>([]);
   const [ matchingContracts, setMatchingContracts ] = useState<AvailableContractForm[]>([]);
 
@@ -61,6 +61,16 @@ export const TransactionModal = (props: TransactionModalProps) => {
   
   const socket = useContext(SocketContext);
   
+
+  function handleReset(event: React.MouseEvent<HTMLElement, MouseEvent>) {
+    setInputExpiry(moment());
+    setInputStrike(productPrice);
+    setInputPercent(0);
+    setInputVolume(0);
+    setContractListable(false);
+    getContracts(productAccountKey);
+  }
+    
 
   function handlePercent(value: number | string | undefined) {
     setInputPercent(value as number)
@@ -98,6 +108,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
     socket.emit("createContract", submitContract);
   }
 
+
   function evaluateSubmitable(form: AvailableContractForm) {
     if ( 
       !form.expiry ||
@@ -115,10 +126,8 @@ export const TransactionModal = (props: TransactionModalProps) => {
         form.expiry &&
         form.strike &&
         form.seller_id &&
-        form.seller_percent &&
         form?.seller_percent! >= 0 &&
         form?.seller_percent! <= 100 &&
-        form?.seller_volume &&
         form?.seller_volume! > 0
     ) {
       console.log('evaluateSubmitable - looks good: ', form)
@@ -293,6 +302,14 @@ export const TransactionModal = (props: TransactionModalProps) => {
           onClick={handleSubmitPurchase}
         >
           <Pyth /> List new contract
+        </Button>
+        <Button
+          size="large"
+          type={"dashed"}
+          className="transaction-modal-button-reset"
+          onClick={handleReset}
+        >
+          Reset
         </Button>
       </div>
 
