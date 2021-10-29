@@ -30,8 +30,6 @@ export interface TransactionModalProps {
 }
 
 export const TransactionModal = (props: TransactionModalProps) => {
-  const [isContractListable, setContractListable] = useState(false);
-  const [isContractMatchable, setContractMacthable] = useState(false);
   const { isModalVisible, product, selectTransaction } = useTransaction();
   
   const { wallet } = useWallet();
@@ -42,8 +40,10 @@ export const TransactionModal = (props: TransactionModalProps) => {
   const productAccountKey = product!.price!.productAccountKey!.toBase58();
   const productConfidence = product.price.confidence;
 
+  const [isContractListable, setContractListable] = useState(false);
+  const [isContractMatchable, setContractMatchable] = useState(false);
   const [ inputExpiry, setInputExpiry ] = useState<Moment | null | undefined>(moment());
-  const [ inputStrike, setInputStrike ] = useState<number | undefined>(productPrice);
+  const [ inputStrike, setInputStrike ] = useState<number | undefined>(Math.round(productPrice));
   const [ inputPercent, setInputPercent ] = useState<number | undefined>(0);
   const [ inputVolume, setInputVolume ] = useState<number | undefined>(0);
   const [ existingContracts, setExistingContracts ] = useState<AvailableContractForm[]>([]);
@@ -64,14 +64,13 @@ export const TransactionModal = (props: TransactionModalProps) => {
 
   function handleReset(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     setInputExpiry(moment());
-    setInputStrike(productPrice);
+    setInputStrike(Math.round(productPrice));
     setInputPercent(0);
     setInputVolume(0);
     setContractListable(false);
-    getContracts(productAccountKey);
+    // getContracts(productAccountKey);
   }
     
-
   function handlePercent(value: number | string | undefined) {
     setInputPercent(value as number)
     setNewAvailableContract({ ...newAvailableContract, seller_percent: value as number });
@@ -108,7 +107,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
     socket.emit("createContract", submitContract);
   }
 
-
   function evaluateSubmitable(form: AvailableContractForm) {
     if ( 
       !form.expiry ||
@@ -118,7 +116,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
     ){
       console.log('evaluateSubmitable - bad expiry or match found: ', form)
       setContractListable(false);
-      getContracts(form.symbol_key)
+      // getContracts(form.symbol_key)
       return
     };
 
@@ -140,13 +138,9 @@ export const TransactionModal = (props: TransactionModalProps) => {
     } else {
       console.log('evaluateSubmitable - looks bad: ', form)
       setContractListable(false)
-      getContracts(form.symbol_key)
+      // getContracts(form.symbol_key)
     };
   };
-
-  const submitContract = useCallback((contract) => {
-
-  }, []);
 
   const getContracts = useCallback((productAccountKey) => {
     console.log('getContracts', productSymbol)
@@ -188,7 +182,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
       console.log('useEffectOff', productSymbol)
       socket.off("TX_CONFIRMED", selectTransaction);
       socket.off("getContracts", populateContracts);
-      socket.off("findMatchingContracts", populateContracts);
+      socket.off("findMatchingContracts", populateMatchingContracts);
     }
   }, [
     inputExpiry,

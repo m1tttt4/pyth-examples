@@ -19,9 +19,8 @@ const getContracts = (symbol_key) => {
   });
 };
 
-// Creates a new contract with null buyer_id and buyer_volume
 const findMatchingContracts = (contract) => {
-  console.log("findMatchingContracts", contract);
+  console.log("Query: findMatchingContracts", contract);
   return new Promise((resolve) => {
     pool.query(
       `SELECT * FROM contracts_test WHERE

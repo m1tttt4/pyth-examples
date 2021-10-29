@@ -52,7 +52,7 @@ io.on("connection", (socket) => {
   });
   
   socket.on("findMatchingContracts", (contract) => {
-    console.log("findMatchingContracts", contract);
+    console.log("Socket: findMatchingContracts", contract);
     queries.findMatchingContracts(contract).then(
       (result) => io.emit("findMatchingContracts", result)).catch(console.log);
   });
