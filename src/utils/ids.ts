@@ -7,6 +7,14 @@ export let TOKEN_PROGRAM_ID = new PublicKey(
   "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
 );
 
+export let BINARY_OPTIONS_ID = new PublicKey(
+  "6Msecaqpxtqatks2JyqXg66nYZ3XxrZ8gDwuSaH6sept"
+);
+
+export let ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID = new PublicKey(
+  "6Msecaqpxtqatks2JyqXg66nYZ3XxrZ8gDwuSaH6sept"
+);
+
 export let LENDING_PROGRAM_ID = new PublicKey(
   "TokenLending1111111111111111111111111111111"
 );
@@ -17,10 +25,6 @@ export let SWAP_PROGRAM_ID = new PublicKey(
 
 export let PYTH_HELLO_WORLD = new PublicKey(
   "BKYTayVSTcCWYm8Qzub8EGkr61Tsnepp4ioxbtVFBCFw"
-);
-
-export let BINARY_OPTIONS_ID = new PublicKey(
-  "6Msecaqpxtqatks2JyqXg66nYZ3XxrZ8gDwuSaH6sept"
 );
 
 export const PROGRAM_IDS = [

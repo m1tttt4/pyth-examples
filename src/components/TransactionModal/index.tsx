@@ -124,8 +124,8 @@ export const TransactionModal = (props: TransactionModalProps) => {
 
     if ( 
         form.expiry &&
-        form.strike &&
         form.seller_id &&
+        form?.strike! >=0 &&
         form?.seller_percent! >= 0 &&
         form?.seller_percent! <= 100 &&
         form?.seller_volume! > 0
