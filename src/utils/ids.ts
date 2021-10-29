@@ -20,7 +20,7 @@ export let PYTH_HELLO_WORLD = new PublicKey(
 );
 
 export let BINARY_OPTIONS_ID = new PublicKey(
-  "61CT8HS9jQvCjFL9i4V9RkAFqZfe8BQ2rdmMKvDXrcNL"
+  "6Msecaqpxtqatks2JyqXg66nYZ3XxrZ8gDwuSaH6sept"
 );
 
 export const PROGRAM_IDS = [

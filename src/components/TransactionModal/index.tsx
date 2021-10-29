@@ -1,8 +1,10 @@
-import type { PublicKey } from "@solana/web3.js";
+import { Account, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { Pyth } from "../Icons/pyth";
 import type { Moment } from "moment";
 import moment from "moment";
-import { Button, DatePicker, Modal, Input, InputNumber } from "antd";
+import { BINARY_OPTIONS_ID } from "../../utils/ids";
+import { notify } from "../../utils/notifications";
+import { Button, DatePicker, Modal, InputNumber } from "antd";
 import React, {
   useCallback,
   useContext,
@@ -10,10 +12,12 @@ import React, {
   useState
 } from "react";
 import sigFigs from "../../utils/sigFigs";
-import { SocketContext } from "../../contexts/socket";
+
+import { sendTransaction, useConnection } from "../../contexts/connection";
 import { useWallet } from "../../contexts/wallet";
 import { useTransaction } from "../../contexts/transaction";
 import { ContractsTable } from "../ContractsTable";
+import { SocketContext } from "../../contexts/socket";
 
 export interface AvailableContractForm {
   symbol: string | undefined,
@@ -30,18 +34,20 @@ export interface TransactionModalProps {
 }
 
 export const TransactionModal = (props: TransactionModalProps) => {
+  const connection = useConnection();
   const { isModalVisible, product, selectTransaction } = useTransaction();
-  
   const { wallet } = useWallet();
+  
+  const socket = useContext(SocketContext);
 
-  const userWalletAddress = wallet?.publicKey?.toBase58();
   const productSymbol = product.product.symbol;
   const productPrice = product.price.price;
   const productAccountKey = product!.price!.productAccountKey!.toBase58();
   const productConfidence = product.price.confidence;
+  const userWalletAddress = wallet?.publicKey?.toBase58();
 
-  const [isContractListable, setContractListable] = useState(false);
-  const [isContractMatchable, setContractMatchable] = useState(false);
+  const [ isContractListable, setContractListable ] = useState(false);
+  const [ isContractMatchable, setContractMatchable ] = useState(false);
   const [ inputExpiry, setInputExpiry ] = useState<Moment | null | undefined>(moment());
   const [ inputStrike, setInputStrike ] = useState<number | undefined>(Math.round(productPrice));
   const [ inputPercent, setInputPercent ] = useState<number | undefined>(0);
@@ -58,9 +64,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
     seller_percent: inputPercent,
     seller_volume: inputVolume
   });
-  
-  const socket = useContext(SocketContext);
-  
 
   function handleReset(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     setInputExpiry(moment());
@@ -68,7 +71,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
     setInputPercent(0);
     setInputVolume(0);
     setContractListable(false);
-    // getContracts(productAccountKey);
   }
     
   function handlePercent(value: number | string | undefined) {
@@ -112,11 +114,11 @@ export const TransactionModal = (props: TransactionModalProps) => {
       !form.expiry ||
       typeof form.expiry !== "object" ||
       !Object.getPrototypeOf(form.expiry).hasOwnProperty("format") ||
-      matchingContracts.length > 0
+      matchingContracts.length > 0 ||
+      !wallet
     ){
-      console.log('evaluateSubmitable - bad expiry or match found: ', form)
+      console.log('evaluateSubmitable - bad expiry or match found or no wallet: ', form)
       setContractListable(false);
-      // getContracts(form.symbol_key)
       return
     };
 
@@ -138,7 +140,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
     } else {
       console.log('evaluateSubmitable - looks bad: ', form)
       setContractListable(false)
-      // getContracts(form.symbol_key)
     };
   };
 
@@ -151,7 +152,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
     console.log('populateContracts', contracts)
     setExistingContracts(contracts);
   }, [setExistingContracts]);
-
 
   const populateMatchingContracts = useCallback((contracts) => {
     console.log('populateMatchingContracts', contracts)
@@ -200,7 +200,49 @@ export const TransactionModal = (props: TransactionModalProps) => {
     socket
   ])
 
-  // console.log(product)
+  const submitTransaction = (publicKey0: PublicKey, publicKey1: PublicKey) => {
+    if (!wallet) {
+      return
+    }
+    const instructions: TransactionInstruction[] = [];
+    const signers: Account[] = [];
+
+    instructions.push(
+      new TransactionInstruction({
+        keys: [
+          {
+            pubkey: new PublicKey(publicKey0),
+            isSigner: false,
+            isWritable: false,
+          },
+          {
+            pubkey: new PublicKey(publicKey1),
+            isSigner: false,
+            isWritable: false,
+          },
+        ],
+        programId: BINARY_OPTIONS_ID,
+      })
+    );
+
+
+    sendTransaction(connection, wallet, instructions, signers).then((txid) => {
+      notify({
+        message: "Transaction executed on Solana",
+        description: (
+          <a
+            href={`https://explorer.solana.com/tx/${txid}?cluster=devnet`}
+            // eslint-disable-next-line react/jsx-no-target-blank
+            target="_blank"
+          >
+            Explorer Link
+          </a>
+        ),
+        type: "success",
+      });
+    });
+  }
+
   return (
     <Modal
       title={
