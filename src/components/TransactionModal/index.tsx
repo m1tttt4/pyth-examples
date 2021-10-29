@@ -15,7 +15,7 @@ import sigFigs from "../../utils/sigFigs";
 
 import { sendTransaction, useConnection } from "../../contexts/connection";
 import { useWallet } from "../../contexts/wallet";
-import { useTransaction } from "../../contexts/transaction";
+import { BinaryOptInstructionProps, useTransaction } from "../../contexts/transaction";
 import { ContractsTable } from "../ContractsTable";
 import { SocketContext } from "../../contexts/socket";
 
@@ -200,48 +200,100 @@ export const TransactionModal = (props: TransactionModalProps) => {
     socket
   ])
 
-  const submitTransaction = (publicKey0: PublicKey, publicKey1: PublicKey) => {
+  const initializeBinaryOptTransaction = (
+    props: BinaryOptInstructionProps
+  ) => {
     if (!wallet) {
       return
     }
-    const instructions: TransactionInstruction[] = [];
     const signers: Account[] = [];
+    const instructions: TransactionInstruction[] = [];
+    // TODO: what is 0?
+    const buf: Buffer = Buffer.from([
+      0,
+      props.decimals,
+      props.expiry,
+      props.strike,
+      props.strike_exponent
+    ]);
+
+    const data = buf.readIn
 
     instructions.push(
       new TransactionInstruction({
         keys: [
           {
-            pubkey: new PublicKey(publicKey0),
+            pubkey: props.pool_account,
+            isSigner: true,
+            isWritable: true,
+          },
+          {
+            pubkey: props.escrow_mint,
             isSigner: false,
             isWritable: false,
           },
           {
-            pubkey: new PublicKey(publicKey1),
+            pubkey: props.escrow_account,
+            isSigner: true,
+            isWritable: true,
+          },
+          {
+            pubkey: props.long_token_mint,
+            isSigner: true,
+            isWritable: false,
+          },
+          {
+            pubkey: props.short_token_mint,
+            isSigner: true,
+            isWritable: false,
+          },
+          {
+            pubkey: props.mint_authority,
+            isSigner: true,
+            isWritable: false,
+          },
+          {
+            pubkey: props.update_authority,
+            isSigner: true,
+            isWritable: false,
+          },
+          {
+            pubkey: props.token_account,
+            isSigner: false,
+            isWritable: false,
+          },
+          {
+            pubkey: props.system_account,
+            isSigner: false,
+            isWritable: false,
+          },
+          {
+            pubkey: props.rent_account,
             isSigner: false,
             isWritable: false,
           },
         ],
-        programId: BINARY_OPTIONS_ID,
+        programId: props.program_id,
       })
     );
-
-
-    sendTransaction(connection, wallet, instructions, signers).then((txid) => {
-      notify({
-        message: "Transaction executed on Solana",
-        description: (
-          <a
-            href={`https://explorer.solana.com/tx/${txid}?cluster=devnet`}
-            // eslint-disable-next-line react/jsx-no-target-blank
-            target="_blank"
-          >
-            Explorer Link
-          </a>
-        ),
-        type: "success",
-      });
-    });
+    return {instructions, signers};
   }
+
+  // sendTransaction(connection, wallet, instructions, signers).then((txid) => {
+    // notify({
+      // message: "Transaction executed on Solana",
+      // description: (
+        // <a
+          // href={`https://explorer.solana.com/tx/${txid}?cluster=devnet`}
+          // // eslint-disable-next-line react/jsx-no-target-blank
+          // target="_blank"
+        // >
+          // Explorer Link
+        // </a>
+      // ),
+      // type: "success",
+    // });
+  // });
 
   return (
     <Modal
