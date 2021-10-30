@@ -28,19 +28,21 @@ export interface BinaryOptionProps {
 
 }
 
+// long_escrow: new account at initialize time
+
 export interface BinaryOptInstructionProps {
-  program_id: PublicKey;
-  pool_account: PublicKey;
-  escrow_mint: PublicKey;
-  escrow_account: PublicKey;
-  long_token_mint: PublicKey;
-  short_token_mint: PublicKey;
-  mint_authority: PublicKey;
-  update_authority: PublicKey;
-  token_account: PublicKey;
-  system_account: PublicKey;
-  rent_account: PublicKey;
-  unknown_zero: number; // long long
+  program_id: PublicKey; // application
+  pool_account: PublicKey; // new account at initialize time
+  escrow_mint: PublicKey; // mint Token account
+  escrow_account: PublicKey; // PublicKey of the long_escrow account
+  long_token_mint: PublicKey; // new account at initialize time
+  short_token_mint: PublicKey; // new account at initialize time
+  mint_authority: PublicKey; // binary option Account [new account at initialize time]
+  update_authority: PublicKey; // binary option Account [new account at initialize time]
+  token_account: PublicKey; // System Token Program ID
+  system_account: PublicKey; // System Token Program ID
+  rent_account: PublicKey; // System Rent ID
+  instruction_enum: number; // long long
   decimals: number; // uint8
   expiry: number; // uint64
   strike: number; // uint64

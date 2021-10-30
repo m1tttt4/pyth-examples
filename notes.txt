@@ -1,0 +1,13 @@
+binary option Account (aka mint authority and update_authority):
+-- made by front end 
+-- money is put in by the payer/initializer
+-- used in the creation of the mint account
+-- returns an empty account
+
+mint Token account:
+-- made by front end using mint authority
+-- returns a token that holds data
+-- call spl function to create
+
+initialize option:
+-- 

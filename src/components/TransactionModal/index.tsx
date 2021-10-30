@@ -19,6 +19,13 @@ import { BinaryOptInstructionProps, useTransaction } from "../../contexts/transa
 import { ContractsTable } from "../ContractsTable";
 import { SocketContext } from "../../contexts/socket";
 
+import {
+  publicKey,
+  uint64,
+  uint128,
+  rustString
+} from "../../utils/layout";
+
 export interface AvailableContractForm {
   symbol: string | undefined,
   symbol_key: string,
@@ -41,15 +48,15 @@ export const TransactionModal = (props: TransactionModalProps) => {
   const socket = useContext(SocketContext);
 
   const productSymbol = product.product.symbol;
-  const productPrice = product.price.price;
+  const productPrice = product.price.price!;
   const productAccountKey = product!.price!.productAccountKey!.toBase58();
-  const productConfidence = product.price.confidence;
+  const productConfidence = product.price.confidence!;
   const userWalletAddress = wallet?.publicKey?.toBase58();
 
   const [ isContractListable, setContractListable ] = useState(false);
   const [ isContractMatchable, setContractMatchable ] = useState(false);
   const [ inputExpiry, setInputExpiry ] = useState<Moment | null | undefined>(moment());
-  const [ inputStrike, setInputStrike ] = useState<number | undefined>(Math.round(productPrice));
+  const [ inputStrike, setInputStrike ] = useState<number | undefined>(Math.round(productPrice!));
   const [ inputPercent, setInputPercent ] = useState<number | undefined>(0);
   const [ inputVolume, setInputVolume ] = useState<number | undefined>(0);
   const [ existingContracts, setExistingContracts ] = useState<AvailableContractForm[]>([]);
@@ -208,16 +215,14 @@ export const TransactionModal = (props: TransactionModalProps) => {
     }
     const signers: Account[] = [];
     const instructions: TransactionInstruction[] = [];
-    // TODO: what is 0?
     const buf: Buffer = Buffer.from([
-      0,
+      props.instruction_enum,
       props.decimals,
       props.expiry,
       props.strike,
       props.strike_exponent
     ]);
 
-    const data = buf.readIn
 
     instructions.push(
       new TransactionInstruction({
