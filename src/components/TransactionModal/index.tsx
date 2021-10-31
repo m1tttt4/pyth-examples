@@ -18,6 +18,7 @@ import { useWallet } from "../../contexts/wallet";
 import { BinaryOptInstructionProps, useTransaction } from "../../contexts/transaction";
 import { ContractsTable } from "../ContractsTable";
 import { SocketContext } from "../../contexts/socket";
+import { MatchableContract } from "../../contexts/contracts";
 
 import {
   publicKey,
@@ -59,8 +60,9 @@ export const TransactionModal = (props: TransactionModalProps) => {
   const [ inputStrike, setInputStrike ] = useState<number | undefined>(Math.round(productPrice!));
   const [ inputPercent, setInputPercent ] = useState<number | undefined>(0);
   const [ inputVolume, setInputVolume ] = useState<number | undefined>(0);
+  const [ inputBuyerVolume, setInputBuyerVolume ] = useState<number | undefined>(0);
   const [ existingContracts, setExistingContracts ] = useState<AvailableContractForm[]>([]);
-  const [ matchingContracts, setMatchingContracts ] = useState<AvailableContractForm[]>([]);
+  const [ matchingContracts, setMatchingContracts ] = useState<MatchableContract[]>([]);
 
   const [ newAvailableContract, setNewAvailableContract ] = useState<AvailableContractForm>({
     symbol: productSymbol,
@@ -72,12 +74,25 @@ export const TransactionModal = (props: TransactionModalProps) => {
     seller_volume: inputVolume
   });
 
+  const [ newMatchableContract, setNewMatchableContract ] = useState<MatchableContract>({
+    symbol: productSymbol,
+    symbol_key: productAccountKey,
+    buyer_volume: inputBuyerVolume,
+    expiry: undefined,
+    strike: undefined,
+    seller_id: undefined,
+    seller_percent: undefined,
+    buyer_id: undefined,
+    buyer_percent: undefined,
+  });
+
   function handleReset(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     setInputExpiry(moment());
     setInputStrike(Math.round(productPrice));
     setInputPercent(0);
     setInputVolume(0);
     setContractListable(false);
+    setContractMatchable(false);
   }
     
   function handlePercent(value: number | string | undefined) {
@@ -104,10 +119,20 @@ export const TransactionModal = (props: TransactionModalProps) => {
     evaluateSubmitable({ ...newAvailableContract, seller_volume: value as number });
   }
 
+  function handleBuyerVolume(value: number | string | undefined) {
+    setInputBuyerVolume(value as number);
+    setNewMatchableContract({ ...newMatchableContract, buyer_volume: value as number });
+    evaluateMatchable({ ...newMatchableContract, buyer_volume: value as number });
+  }
+  
   function handleSubmitPurchase(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     event.preventDefault();
     evaluateSubmitable(newAvailableContract);
-    if ( isContractListable === false ) { return };
+    if ( isContractListable === false ) {
+      if ( inputVolume! > 0 ) {
+        return
+      }
+      return };
     const submitContract = {
       ...newAvailableContract,
       expiry: (newAvailableContract['expiry']! as Moment).format('YYYYMMDD')
@@ -116,38 +141,48 @@ export const TransactionModal = (props: TransactionModalProps) => {
     socket.emit("createContract", submitContract);
   }
 
+  function handleSubmitMatch(event: React.MouseEvent<HTMLElement, MouseEvent>) {
+    event.preventDefault();
+  }
+
   function evaluateSubmitable(form: AvailableContractForm) {
     if ( 
       !form.expiry ||
       typeof form.expiry !== "object" ||
       !Object.getPrototypeOf(form.expiry).hasOwnProperty("format") ||
-      matchingContracts.length > 0 ||
       !wallet
     ){
-      console.log('evaluateSubmitable - bad expiry or match found or no wallet: ', form)
+      // console.log('evaluateSubmitable - bad expiry or match found or no wallet: ', form)
       setContractListable(false);
-      return
-    };
-
-    if ( 
-        form.expiry &&
-        form.seller_id &&
-        form?.strike! >=0 &&
-        form?.seller_percent! >= 0 &&
-        form?.seller_percent! <= 100 &&
-        form?.seller_volume! > 0
-    ) {
-      console.log('evaluateSubmitable - looks good: ', form)
-      const submitContract = {
-        ...form,
-        expiry: (form.expiry as Moment).format('YYYYMMDD')
-      };
-      setContractListable(true) 
-      socket.emit("findMatchingContracts", submitContract)
     } else {
-      console.log('evaluateSubmitable - looks bad: ', form)
-      setContractListable(false)
+      if ( 
+          form.expiry &&
+          form.seller_id &&
+          form?.strike! >=0 &&
+          form?.seller_percent! >= 0 &&
+          form?.seller_percent! <= 100 &&
+          form?.seller_volume! > 0
+      ) {
+        // console.log('evaluateSubmitable - looks good: ', form)
+        const submitContract = {
+          ...form,
+          expiry: (form.expiry as Moment).format('YYYYMMDD')
+        };
+        setContractListable(true) 
+        socket.emit("findMatchingContracts", submitContract)
+      } else {
+        // console.log('evaluateSubmitable - looks bad: ', form)
+        setContractListable(false)
+      };
     };
+  };
+
+  function evaluateMatchable(form: MatchableContract) {
+    if ( form.buyer_volume! > 0 ) {
+      setContractMatchable(true);
+    } else {
+      setContractMatchable(false);
+    }
   };
 
   const getContracts = useCallback((productAccountKey) => {
@@ -158,13 +193,14 @@ export const TransactionModal = (props: TransactionModalProps) => {
   const populateContracts = useCallback((contracts) => {
     console.log('populateContracts', contracts)
     setExistingContracts(contracts);
+    setMatchingContracts(contracts);
+
   }, [setExistingContracts]);
 
   const populateMatchingContracts = useCallback((contracts) => {
     console.log('populateMatchingContracts', contracts)
     setMatchingContracts(contracts);
-    setExistingContracts(contracts);
-  }, [setMatchingContracts, setExistingContracts]);
+  }, [setMatchingContracts]);
   
   useEffect(() => {
     if (isModalVisible !== true) { return };
@@ -183,10 +219,10 @@ export const TransactionModal = (props: TransactionModalProps) => {
     socket.on("getContracts", populateContracts);
     socket.on("findMatchingContracts", populateMatchingContracts);
     getContracts(productAccountKey);
-    console.log('useEffectOn', productSymbol)
+    // console.log('useEffectOn', productSymbol)
 
     return () => {
-      console.log('useEffectOff', productSymbol)
+      // console.log('useEffectOff', productSymbol)
       socket.off("TX_CONFIRMED", selectTransaction);
       socket.off("getContracts", populateContracts);
       socket.off("findMatchingContracts", populateMatchingContracts);
@@ -312,7 +348,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
       visible={isModalVisible}
       okButtonProps={{ style: { display: "none" } }}
       onCancel={selectTransaction}
-      width={450}
+      width="auto"
     >
       {/* Symbol */}
       <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
@@ -415,7 +451,13 @@ export const TransactionModal = (props: TransactionModalProps) => {
 
       <div className="contracts-existing">
         All contracts for {productSymbol}
-        <ContractsTable isContractMatchable={isContractMatchable} contracts={existingContracts} handleSubmitPurchase={handleSubmitPurchase}/>
+        <ContractsTable
+            isContractMatchable={isContractMatchable}
+            contracts={matchingContracts}
+            handleSubmitMatch={handleSubmitMatch}
+            handleBuyerVolume={handleBuyerVolume}
+            inputBuyerVolume={inputBuyerVolume}
+        />
       </div>
     </Modal>
   );

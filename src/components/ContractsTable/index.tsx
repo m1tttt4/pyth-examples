@@ -1,21 +1,21 @@
 import React, { useMemo, useState } from "react";
 import { PriceStatus } from "@pythnetwork/client";
-import { Button, Col, Row, Table } from "antd";
+import { Button, Col, Row, Table, InputNumber } from "antd";
 import { Link } from "react-router-dom";
 import { sendTransaction, useConnection } from "../../contexts/connection";
 import { useWallet } from "../../contexts/wallet";
 import { PYTH_HELLO_WORLD } from "../../utils/ids";
 import { notify } from "../../utils/notifications";
 import sigFigs from "../../utils/sigFigs";
-import { ProductObject, TransactionProvider } from "../../contexts/transaction";
-import { TransactionButton } from "../../components/TransactionButton";
-import { AvailableContractForm } from "../../components/TransactionModal";
+import { MatchableContract, MatchableContractProvider } from "../../contexts/contracts";
 import { Pyth } from "../Icons/pyth";
 
 export interface ContractsTableProps {
-  contracts: AvailableContractForm[] | undefined,
-  handleSubmitPurchase: (event: React.MouseEvent<HTMLElement, MouseEvent>) => void,
-  isContractMatchable: boolean
+  contracts: MatchableContract[] | undefined,
+  handleSubmitMatch: (event: React.MouseEvent<HTMLElement, MouseEvent>) => void,
+  isContractMatchable: boolean,
+  handleBuyerVolume: (value: string | number | undefined) => void,
+  inputBuyerVolume: number | undefined
 }
 
 export const ContractsTable = (props: ContractsTableProps) => {
@@ -54,24 +54,47 @@ export const ContractsTable = (props: ContractsTableProps) => {
       className: `${columnClassName}`,
     },
     {
+      title: "buyer_volume",
+      align: "right" as "right",
+      width: `${columnWidth}`,
+      className: `${columnClassName}`,
+      render: (value: MatchableContract) => (
+      <>
+        <MatchableContractProvider contract={value} >
+          <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
+            <div style={{ float: 'left', width: 'auto' }}>
+              Quantity:
+            </div>
+            <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
+              <InputNumber value={value.buyer_volume} onChange={props.handleBuyerVolume}/>
+            </div>
+          </div>
+        </MatchableContractProvider>
+      </>
+      ),
+    },
+    {
       title: "Buy Match",
       align: "right" as "right",
       width: `${columnWidth}`,
       className: `${columnClassName}`,
-      render: () => (
+      render: (value: MatchableContract) => (
       <>
-        <div className="transaction-modal-wrapper-button">
-          <Button
-            size="large"
-            type={"primary"}
-            className="transaction-modal-button-sell"
-            onClick={props.handleSubmitPurchase}
-            ghost={!props.isContractMatchable}
-            disabled={!props.isContractMatchable}
-          >
-            <Pyth />
-          </Button>
-        </div>
+        <MatchableContractProvider contract={value} >
+          <div className="transaction-modal-wrapper-button">
+            <Button
+              size="large"
+              type={"primary"}
+              className="transaction-modal-button-sell"
+              onClick={props.handleSubmitMatch}
+              ghost={!props.isContractMatchable}
+              disabled={!props.isContractMatchable}
+            >
+              <Pyth />
+              {value.expiry}
+            </Button>
+          </div>
+        </MatchableContractProvider>
       </>
       ),
     },
@@ -83,6 +106,9 @@ export const ContractsTable = (props: ContractsTableProps) => {
         .map((c: any) => props!.contracts![c]),
     [props]
   );
+  console.log(contracts)
+  // const _contracts = contracts.map((c: any) => ({...c, key: {...c}}))
+  // console.log(_contracts)
   // console.log(products)
   return (
     <>
