@@ -19,14 +19,12 @@ export interface MatchableContract {
 
 export interface MatchableContractProps {
   contract: MatchableContract,
-  selectedContract: MatchableContract,
   matchableContracts: MatchableContract[] | undefined,
   selectContract: ((contract: MatchableContract) => void)
 }
 
 const MatchableContractContext = React.createContext<MatchableContractProps>({
   contract: {} as MatchableContract,
-  selectedContract: {} as MatchableContract,
   matchableContracts: [{} as MatchableContract],
   selectContract() {}
 });
@@ -37,7 +35,7 @@ export function MatchableContractProvider({
     matchableContracts = [] as MatchableContract[],
     selectContract = (contract: MatchableContract) => {}
 }) {
-  const [selectedContract, setSelectedContract] = useState({} as MatchableContract);
+  // const [selectedContract, setSelectedContract] = useState({} as MatchableContract);
   // const selectContract = useCallback((contract) => {
     // setSelectedContract(contract);
   // }, [setSelectedContract]);
@@ -48,7 +46,6 @@ export function MatchableContractProvider({
       value={{
         contract,
         matchableContracts,
-        selectedContract,
         selectContract
       }}
     >
@@ -62,12 +59,10 @@ export function useMatchableContract() {
     contract,
     matchableContracts,
     selectContract,
-    selectedContract,
   } = useContext(MatchableContractContext);
   return {
     contract,
     matchableContracts,
     selectContract,
-    selectedContract,
   };
 }

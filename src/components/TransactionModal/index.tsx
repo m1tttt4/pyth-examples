@@ -53,7 +53,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
   const productConfidence = product.price.confidence!;
   const userWalletAddress = wallet?.publicKey?.toBase58();
 
-  const { selectedContract, matchableContracts } = useMatchableContract()
+  const { matchableContracts } = useMatchableContract()
  
   const [ currentContract, setCurrentContract ] = useState<MatchableContract>();
 
