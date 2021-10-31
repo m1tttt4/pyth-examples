@@ -1,27 +1,36 @@
-import React, { useMemo, useState } from "react";
-import { PriceStatus } from "@pythnetwork/client";
-import { Button, Col, Row, Table, InputNumber } from "antd";
-import { Link } from "react-router-dom";
-import { sendTransaction, useConnection } from "../../contexts/connection";
-import { useWallet } from "../../contexts/wallet";
-import { PYTH_HELLO_WORLD } from "../../utils/ids";
-import { notify } from "../../utils/notifications";
-import sigFigs from "../../utils/sigFigs";
-import { MatchableContract, MatchableContractProvider } from "../../contexts/contracts";
+import React, { useMemo } from "react";
+import { Button, Col, Row, Table } from "antd";
+import { MatchableContract, MatchableContractProvider, useMatchableContract } from "../../contexts/contracts";
 import { Pyth } from "../Icons/pyth";
 
-export interface ContractsTableProps {
-  contracts: MatchableContract[] | undefined,
-  handleSubmitMatch: (event: React.MouseEvent<HTMLElement, MouseEvent>) => void,
-  isContractMatchable: boolean,
-  handleBuyerVolume: (value: string | number | undefined) => void,
-  inputBuyerVolume: number | undefined
-}
 
-export const ContractsTable = (props: ContractsTableProps) => {
+const MatchableButton = () => {
+
+	const { contract, selectContract } = useMatchableContract()
+
+	const handleUseMatch = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+		console.log("handleUseMatch", contract)
+		selectContract(contract);
+	}
+
+	return (
+		<div className="transaction-modal-wrapper-button">
+			<Button
+				size="large"
+				type={"primary"}
+				className="transaction-modal-button-sell"
+				onClick={handleUseMatch}
+			>
+				<Pyth />
+			</Button>
+		</div>
+	);
+};
+
+export const ContractsTable = () => {
   const columnWidth = "auto" as string;
   const columnClassName = "table-column";
-
+	const { matchableContracts, selectContract } = useMatchableContract()
   const columns = [
     {
       title: "Symbol",
@@ -54,59 +63,28 @@ export const ContractsTable = (props: ContractsTableProps) => {
       className: `${columnClassName}`,
     },
     {
-      title: "buyer_volume",
-      align: "right" as "right",
-      width: `${columnWidth}`,
-      className: `${columnClassName}`,
-      render: (value: MatchableContract) => (
-      <>
-        <MatchableContractProvider contract={value} >
-          <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
-            <div style={{ float: 'left', width: 'auto' }}>
-              Quantity:
-            </div>
-            <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
-              <InputNumber value={value.buyer_volume} onChange={props.handleBuyerVolume}/>
-            </div>
-          </div>
-        </MatchableContractProvider>
-      </>
-      ),
-    },
-    {
       title: "Buy Match",
       align: "right" as "right",
       width: `${columnWidth}`,
       className: `${columnClassName}`,
       render: (value: MatchableContract) => (
       <>
-        <MatchableContractProvider contract={value} >
-          <div className="transaction-modal-wrapper-button">
-            <Button
-              size="large"
-              type={"primary"}
-              className="transaction-modal-button-sell"
-              onClick={props.handleSubmitMatch}
-              ghost={!props.isContractMatchable}
-              disabled={!props.isContractMatchable}
-            >
-              <Pyth />
-              {value.expiry}
-            </Button>
-          </div>
+        <MatchableContractProvider contract={value} selectContract={selectContract}  key={value.strike}>
+					<MatchableButton />
         </MatchableContractProvider>
       </>
       ),
     },
   ];
+
   const contracts: object[] = useMemo(
     () =>
-      Object.keys(props!.contracts!)
+      Object.keys(matchableContracts!)
         .sort()
-        .map((c: any) => props!.contracts![c]),
-    [props]
+        .map((c: any) => matchableContracts![c]),
+    [matchableContracts]
   );
-  console.log(contracts)
+  // console.log(contracts)
   // const _contracts = contracts.map((c: any) => ({...c, key: {...c}}))
   // console.log(_contracts)
   // console.log(products)

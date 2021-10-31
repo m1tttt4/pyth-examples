@@ -1,4 +1,4 @@
-import { Account, PublicKey, TransactionInstruction } from "@solana/web3.js";
+import { Account, TransactionInstruction } from "@solana/web3.js";
 import { Pyth } from "../Icons/pyth";
 import type { Moment } from "moment";
 import moment from "moment";
@@ -18,7 +18,7 @@ import { useWallet } from "../../contexts/wallet";
 import { BinaryOptInstructionProps, useTransaction } from "../../contexts/transaction";
 import { ContractsTable } from "../ContractsTable";
 import { SocketContext } from "../../contexts/socket";
-import { MatchableContract } from "../../contexts/contracts";
+import { MatchableContract, MatchableContractProvider, useMatchableContract } from "../../contexts/contracts";
 
 import {
   publicKey,
@@ -45,7 +45,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
   const connection = useConnection();
   const { isModalVisible, product, selectTransaction } = useTransaction();
   const { wallet } = useWallet();
-  
   const socket = useContext(SocketContext);
 
   const productSymbol = product.product.symbol;
@@ -53,6 +52,15 @@ export const TransactionModal = (props: TransactionModalProps) => {
   const productAccountKey = product!.price!.productAccountKey!.toBase58();
   const productConfidence = product.price.confidence!;
   const userWalletAddress = wallet?.publicKey?.toBase58();
+
+  const { selectedContract, matchableContracts } = useMatchableContract()
+ 
+  const [ currentContract, setCurrentContract ] = useState<MatchableContract>();
+
+  const setCurrentToMatched = useCallback((contract) => {
+    console.log("setCurrentToMatched", contract)
+    setCurrentContract(contract)
+  }, [])
 
   const [ isContractListable, setContractListable ] = useState(false);
   const [ isContractMatchable, setContractMatchable ] = useState(false);
@@ -62,7 +70,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
   const [ inputVolume, setInputVolume ] = useState<number | undefined>(0);
   const [ inputBuyerVolume, setInputBuyerVolume ] = useState<number | undefined>(0);
   const [ existingContracts, setExistingContracts ] = useState<AvailableContractForm[]>([]);
-  const [ matchingContracts, setMatchingContracts ] = useState<MatchableContract[]>([]);
+  const [ matchingContracts, setMatchingContracts ] = useState<MatchableContract[]>([{} as MatchableContract]);
 
   const [ newAvailableContract, setNewAvailableContract ] = useState<AvailableContractForm>({
     symbol: productSymbol,
@@ -86,6 +94,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
     buyer_percent: undefined,
   });
 
+  
   function handleReset(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     setInputExpiry(moment());
     setInputStrike(Math.round(productPrice));
@@ -94,7 +103,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
     setContractListable(false);
     setContractMatchable(false);
   }
-    
+
   function handlePercent(value: number | string | undefined) {
     setInputPercent(value as number)
     setNewAvailableContract({ ...newAvailableContract, seller_percent: value as number });
@@ -119,12 +128,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
     evaluateSubmitable({ ...newAvailableContract, seller_volume: value as number });
   }
 
-  function handleBuyerVolume(value: number | string | undefined) {
-    setInputBuyerVolume(value as number);
-    setNewMatchableContract({ ...newMatchableContract, buyer_volume: value as number });
-    evaluateMatchable({ ...newMatchableContract, buyer_volume: value as number });
-  }
-  
   function handleSubmitPurchase(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     event.preventDefault();
     evaluateSubmitable(newAvailableContract);
@@ -146,7 +149,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
   }
 
   function evaluateSubmitable(form: AvailableContractForm) {
-    if ( 
+    if (
       !form.expiry ||
       typeof form.expiry !== "object" ||
       !Object.getPrototypeOf(form.expiry).hasOwnProperty("format") ||
@@ -155,7 +158,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
       // console.log('evaluateSubmitable - bad expiry or match found or no wallet: ', form)
       setContractListable(false);
     } else {
-      if ( 
+      if (
           form.expiry &&
           form.seller_id &&
           form?.strike! >=0 &&
@@ -168,7 +171,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
           ...form,
           expiry: (form.expiry as Moment).format('YYYYMMDD')
         };
-        setContractListable(true) 
+        setContractListable(true)
         socket.emit("findMatchingContracts", submitContract)
       } else {
         // console.log('evaluateSubmitable - looks bad: ', form)
@@ -189,7 +192,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
     console.log('getContracts', productSymbol)
     socket.emit("getContracts", productAccountKey);
   }, [socket, productSymbol]);
-  
+
   const populateContracts = useCallback((contracts) => {
     console.log('populateContracts', contracts)
     setExistingContracts(contracts);
@@ -201,7 +204,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
     console.log('populateMatchingContracts', contracts)
     setMatchingContracts(contracts);
   }, [setMatchingContracts]);
-  
+
   useEffect(() => {
     if (isModalVisible !== true) { return };
     setNewAvailableContract({
@@ -214,12 +217,11 @@ export const TransactionModal = (props: TransactionModalProps) => {
       seller_volume: inputVolume
     })
 
-    
     socket.on("TX_CONFIRMED", selectTransaction);
     socket.on("getContracts", populateContracts);
     socket.on("findMatchingContracts", populateMatchingContracts);
     getContracts(productAccountKey);
-    // console.log('useEffectOn', productSymbol)
+    console.log('useEffectOn', currentContract)
 
     return () => {
       // console.log('useEffectOff', productSymbol)
@@ -228,6 +230,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
       socket.off("findMatchingContracts", populateMatchingContracts);
     }
   }, [
+    currentContract,
     inputExpiry,
     inputPercent,
     inputStrike,
@@ -320,29 +323,13 @@ export const TransactionModal = (props: TransactionModalProps) => {
     return {instructions, signers};
   }
 
-  // sendTransaction(connection, wallet, instructions, signers).then((txid) => {
-    // notify({
-      // message: "Transaction executed on Solana",
-      // description: (
-        // <a
-          // href={`https://explorer.solana.com/tx/${txid}?cluster=devnet`}
-          // // eslint-disable-next-line react/jsx-no-target-blank
-          // target="_blank"
-        // >
-          // Explorer Link
-        // </a>
-      // ),
-      // type: "success",
-    // });
-  // });
-
   return (
     <Modal
       title={
         <div className="transaction-modal-title">
           {productAccountKey}
         </div>
-      }  
+      }
       className="transaction-modal"
       okText="Connect"
       visible={isModalVisible}
@@ -369,7 +356,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
           {`$${sigFigs(productPrice)}`}
         </div>
       </div>
-      
+
       {/* Confidence */}
       <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
         <div style={{ float: 'left', width: 'auto' }}>
@@ -379,12 +366,12 @@ export const TransactionModal = (props: TransactionModalProps) => {
           {`\xB1$${sigFigs(productConfidence)}`}
         </div>
       </div>
-      
+
       {/* Input collection */}
       {/* Strike */}
       <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
         <div style={{ float: 'left', width: 'auto' }}>
-          Strike: 
+          Strike:
         </div>
         <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
           <InputNumber value={inputStrike} onChange={handleStrike}/>
@@ -404,7 +391,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
       {/* Quantity */}
       <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
         <div style={{ float: 'left', width: 'auto' }}>
-          Quantity: 
+          Quantity:
         </div>
         <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
           <InputNumber value={inputVolume} onChange={handleVolume}/>
@@ -414,7 +401,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
       {/* Percent */}
       <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
         <div style={{ float: 'left', width: 'auto' }}>
-          Percent Chance: 
+          Percent Chance:
         </div>
         <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
           <InputNumber value={inputPercent} onChange={handlePercent}/>
@@ -430,7 +417,8 @@ export const TransactionModal = (props: TransactionModalProps) => {
           disabled={!isContractListable}
           onClick={handleSubmitPurchase}
         >
-          <Pyth /> List new contract
+          <Pyth />
+          {isContractMatchable ? "Buy Match" : isContractListable ? "List": ""}
         </Button>
         <Button
           size="large"
@@ -442,22 +430,11 @@ export const TransactionModal = (props: TransactionModalProps) => {
         </Button>
       </div>
 
-      {/*
-      <div className="contracts-matching">
-        Matching contracts for {productSymbol}
-        <ContractsTable contracts={matchingContracts} handleSubmitPurchase={handleSubmitPurchase}/>
-      </div>
-      */}
-
       <div className="contracts-existing">
         All contracts for {productSymbol}
-        <ContractsTable
-            isContractMatchable={isContractMatchable}
-            contracts={matchingContracts}
-            handleSubmitMatch={handleSubmitMatch}
-            handleBuyerVolume={handleBuyerVolume}
-            inputBuyerVolume={inputBuyerVolume}
-        />
+        <MatchableContractProvider matchableContracts={matchingContracts} selectContract={setCurrentToMatched}>
+          <ContractsTable />
+        </MatchableContractProvider>
       </div>
     </Modal>
   );

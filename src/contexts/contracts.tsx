@@ -3,7 +3,6 @@ import React, {
   useContext,
   useState
 } from "react";
-import type { PublicKey } from "@solana/web3.js";
 import type { Moment } from "moment";
 
 export interface MatchableContract {
@@ -19,27 +18,38 @@ export interface MatchableContract {
 }
 
 export interface MatchableContractProps {
-  contract: MatchableContract | undefined
+  contract: MatchableContract,
+  selectedContract: MatchableContract,
+  matchableContracts: MatchableContract[] | undefined,
+  selectContract: ((contract: MatchableContract) => void)
 }
 
 const MatchableContractContext = React.createContext<MatchableContractProps>({
-  contract: undefined
+  contract: {} as MatchableContract,
+  selectedContract: {} as MatchableContract,
+  matchableContracts: [{} as MatchableContract],
+  selectContract() {}
 });
 
 export function MatchableContractProvider({
     children = null as any,
     contract = {} as MatchableContract,
+    matchableContracts = [] as MatchableContract[],
+    selectContract = (contract: MatchableContract) => {}
 }) {
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const selectContract = useCallback(() => {
-    setIsModalVisible(!isModalVisible);
-  }, [isModalVisible]);
+  const [selectedContract, setSelectedContract] = useState({} as MatchableContract);
+  // const selectContract = useCallback((contract) => {
+    // setSelectedContract(contract);
+  // }, [setSelectedContract]);
 
   
   return (
     <MatchableContractContext.Provider
       value={{
-        contract
+        contract,
+        matchableContracts,
+        selectedContract,
+        selectContract
       }}
     >
       {children}
@@ -47,11 +57,17 @@ export function MatchableContractProvider({
   );
 }
 
-export function useContract() {
+export function useMatchableContract() {
   const { 
     contract,
+    matchableContracts,
+    selectContract,
+    selectedContract,
   } = useContext(MatchableContractContext);
   return {
     contract,
+    matchableContracts,
+    selectContract,
+    selectedContract,
   };
 }
