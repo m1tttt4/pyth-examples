@@ -1,4 +1,4 @@
-import { Account, TransactionInstruction } from "@solana/web3.js";
+import { Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { Pyth } from "../Icons/pyth";
 import type { Moment } from "moment";
 import moment from "moment";
@@ -305,7 +305,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
     if (!wallet) {
       return
     }
-    const signers: Account[] = [];
     const instructions: TransactionInstruction[] = [];
     const buf: Buffer = Buffer.from([
       props.instruction_enum,
@@ -314,8 +313,35 @@ export const TransactionModal = (props: TransactionModalProps) => {
       props.strike,
       props.strike_exponent
     ]);
+    // const escrow_mint_account = new PublicKey(escrow_mint)
+    const source = new Keypair()
+    const source_account = new Keypair(source.secretKey.toBase58())
+    
+    const pool = new Keypair()
+    const long_escrow = new Keypair()
+    const short_escrow = new Keypair()
+    const long_mint = new Keypair()
+    const short_mint = new Keypair()
 
+    const pool_account = pool.publicKey
+    const escrow_account = long_escrow.publicKey
+    const long_token_mint_account = long_mint.publicKey
+    const short_token_mint_account = short_mint.publicKey
+    const mint_authority_account = source_account.publicKey
+    const update_authority_account = source_account.publicKey
+    const token_account = PublicKey(TOKEN_PROGRAM_ID)
+    const system_account = PublicKey(SYSTEM_PROGRAM_ID)
+    const rent_account = PublicKey(SYSVAR_RENT_ID)
 
+    const signers: Keypair[] = [
+      source_account,
+      long_mint,
+      short_mint,
+      long_escrow,
+      short_escrow,
+      pool
+    ];
+    
     instructions.push(
       new TransactionInstruction({
         keys: [
