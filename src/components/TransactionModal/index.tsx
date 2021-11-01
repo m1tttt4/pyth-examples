@@ -1,4 +1,11 @@
-import { Keypair, LAMPORTS_PER_SOL, sendAndConfirmTransaction, Transaction, TransactionInstruction } from "@solana/web3.js";
+import {
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  sendAndConfirmTransaction,
+  Transaction,
+  TransactionInstruction
+} from "@solana/web3.js";
 import { Token } from "@solana/spl-token";
 import { Pyth } from "../Icons/pyth";
 import type { Moment } from "moment";
@@ -354,6 +361,75 @@ export const TransactionModal = (props: TransactionModalProps) => {
         // conn.send_transaction(txn, payer, mint_account, opts=opts, recent_blockhash=recent_blockhash)
         // return cast(Token, token)
 
+    // const mintWallet = Keypair.generate()
+    // const source = mintWallet.publicKey
+    // const source_account = Keypair.fromSecretKey(mintWallet.secretKey)
+    // const fromAirdropSignature = await connection.requestAirdrop(
+      // mintWallet.publicKey,
+      // LAMPORTS_PER_SOL,
+    // );
+    // //wait for airdrop confirmation
+    // await connection.confirmTransaction(fromAirdropSignature);
+
+    // const mint = await Token.createMint(
+      // connection,
+      // mintWallet,
+      // mintWallet.publicKey,
+      // null,
+      // 9,
+      // TOKEN_PROGRAM_ID,
+    // );
+    // //get the token account of the fromWallet Solana address, if it does not exist, create it
+    // const fromTokenAccount = await mint.getOrCreateAssociatedAccountInfo(
+      // mintWallet.publicKey,
+    // );
+
+    // // Generate a new wallet to receive newly minted token
+    // var toWallet = Keypair.generate();
+
+    // //get the token account of the toWallet Solana address, if it does not exist, create it
+    // var toTokenAccount = await mint.getOrCreateAssociatedAccountInfo(
+      // toWallet.publicKey,
+    // );
+
+    // //minting 1 new token to the "fromTokenAccount" account we just returned/created
+    // await mint.mintTo(
+      // fromTokenAccount.address, //who it goes to
+      // mintWallet.publicKey, // minting authority
+      // [], // multisig
+      // 1000000000, // how many
+    // );
+
+    // await mint.setAuthority(
+      // mint.publicKey,
+      // null,
+      // "MintTokens",
+      // mintWallet.publicKey,
+      // []
+    // )
+
+    // // Add token transfer instructions to transaction
+    // var transaction = new Transaction().add(
+      // Token.createTransferInstruction(
+        // TOKEN_PROGRAM_ID,
+        // fromTokenAccount.address,
+        // toTokenAccount.address,
+        // mintWallet.publicKey,
+        // [],
+        // 1,
+      // ),
+    // );
+
+    // // Sign transaction, broadcast, and confirm
+    // var signature = await sendAndConfirmTransaction(
+      // connection,
+      // transaction,
+      // [mintWallet],
+      // {commitment: 'confirmed'},
+    // );
+    // console.log('SIGNATURE', signature);
+
+    
     const mintWallet = Keypair.generate()
     const source = mintWallet.publicKey
     const source_account = Keypair.fromSecretKey(mintWallet.secretKey)
@@ -364,7 +440,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
     //wait for airdrop confirmation
     await connection.confirmTransaction(fromAirdropSignature);
 
-    const mint = await Token.createMint(
+    const escrow_mint = await Token.createMint(
       connection,
       mintWallet,
       mintWallet.publicKey,
@@ -372,58 +448,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
       9,
       TOKEN_PROGRAM_ID,
     );
-    //get the token account of the fromWallet Solana address, if it does not exist, create it
-    const fromTokenAccount = await mint.getOrCreateAssociatedAccountInfo(
-      mintWallet.publicKey,
-    );
-
-    // Generate a new wallet to receive newly minted token
-    var toWallet = Keypair.generate();
-
-    //get the token account of the toWallet Solana address, if it does not exist, create it
-    var toTokenAccount = await mint.getOrCreateAssociatedAccountInfo(
-      toWallet.publicKey,
-    );
-
-    //minting 1 new token to the "fromTokenAccount" account we just returned/created
-    await mint.mintTo(
-      fromTokenAccount.address, //who it goes to
-      mintWallet.publicKey, // minting authority
-      [], // multisig
-      1000000000, // how many
-    );
-
-    await mint.setAuthority(
-      mint.publicKey,
-      null,
-      "MintTokens",
-      mintWallet.publicKey,
-      []
-    )
-
-    // Add token transfer instructions to transaction
-    var transaction = new Transaction().add(
-      Token.createTransferInstruction(
-        TOKEN_PROGRAM_ID,
-        fromTokenAccount.address,
-        toTokenAccount.address,
-        mintWallet.publicKey,
-        [],
-        1,
-      ),
-    );
-
-    // Sign transaction, broadcast, and confirm
-    var signature = await sendAndConfirmTransaction(
-      connection,
-      transaction,
-      [mintWallet],
-      {commitment: 'confirmed'},
-    );
-    console.log('SIGNATURE', signature);
-
-
-    // const escrow_mint_account = new PublicKey(escrow_mint)
+    const escrow_mint_account = new PublicKey(escrow_mint)
     
     const pool = new Keypair()
     const long_escrow = new Keypair()
@@ -450,63 +475,63 @@ export const TransactionModal = (props: TransactionModalProps) => {
       pool
     ];
     
-    // instructions.push(
-    //   new TransactionInstruction({
-    //     keys: [
-    //       {
-    //         pubkey: pool_account,
-    //         isSigner: true,
-    //         isWritable: true,
-    //       },
-    //       {
-    //         pubkey: escrow_mint,
-    //         isSigner: false,
-    //         isWritable: false,
-    //       },
-    //       {
-    //         pubkey: escrow_account,
-    //         isSigner: true,
-    //         isWritable: true,
-    //       },
-    //       {
-    //         pubkey: long_token_mint,
-    //         isSigner: true,
-    //         isWritable: false,
-    //       },
-    //       {
-    //         pubkey: short_token_mint,
-    //         isSigner: true,
-    //         isWritable: false,
-    //       },
-    //       {
-    //         pubkey: mint_authority,
-    //         isSigner: true,
-    //         isWritable: false,
-    //       },
-    //       {
-    //         pubkey: update_authority,
-    //         isSigner: true,
-    //         isWritable: false,
-    //       },
-    //       {
-    //         pubkey: token_account,
-    //         isSigner: false,
-    //         isWritable: false,
-    //       },
-    //       {
-    //         pubkey: system_account,
-    //         isSigner: false,
-    //         isWritable: false,
-    //       },
-    //       {
-    //         pubkey: rent_account,
-    //         isSigner: false,
-    //         isWritable: false,
-    //       },
-    //     ],
-    //     programId: program_id,
-    //   })
-    // );
+    instructions.push(
+      new TransactionInstruction({
+        keys: [
+          {
+            pubkey: pool_account,
+            isSigner: true,
+            isWritable: true,
+          },
+          {
+            pubkey: escrow_mint,
+            isSigner: false,
+            isWritable: false,
+          },
+          {
+            pubkey: escrow_account,
+            isSigner: true,
+            isWritable: true,
+          },
+          {
+            pubkey: long_token_mint,
+            isSigner: true,
+            isWritable: false,
+          },
+          {
+            pubkey: short_token_mint,
+            isSigner: true,
+            isWritable: false,
+          },
+          {
+            pubkey: mint_authority,
+            isSigner: true,
+            isWritable: false,
+          },
+          {
+            pubkey: update_authority,
+            isSigner: true,
+            isWritable: false,
+          },
+          {
+            pubkey: token_account,
+            isSigner: false,
+            isWritable: false,
+          },
+          {
+            pubkey: system_account,
+            isSigner: false,
+            isWritable: false,
+          },
+          {
+            pubkey: rent_account,
+            isSigner: false,
+            isWritable: false,
+          },
+        ],
+        programId: program_id,
+      })
+    );
     return {instructions, signers};
   }
 
