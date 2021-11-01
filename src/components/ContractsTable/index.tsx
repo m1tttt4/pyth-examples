@@ -69,7 +69,7 @@ export const ContractsTable = () => {
       className: `${columnClassName}`,
       render: (value: MatchableContract) => (
       <>
-        <MatchableContractProvider contract={value} selectContract={selectContract}  key={value.strike}>
+        <MatchableContractProvider contract={value} selectContract={selectContract}  key={value?.toString()}>
 					<MatchableButton />
         </MatchableContractProvider>
       </>
