@@ -1,4 +1,5 @@
 import {
+  Commitment,
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
@@ -26,7 +27,7 @@ import React, {
 } from "react";
 import sigFigs from "../../utils/sigFigs";
 
-import { sendTransaction, useConnection } from "../../contexts/connection";
+import { getErrorForTransaction, sendTransaction, useConnection } from "../../contexts/connection";
 import { useWallet } from "../../contexts/wallet";
 import { BinaryOptInstructionProps, useTransaction } from "../../contexts/transaction";
 import { ContractsTable } from "../ContractsTable";
@@ -39,6 +40,7 @@ import {
   uint128,
   rustString
 } from "../../utils/layout";
+import { ExplorerLink } from "../ExplorerLink";
 
 export interface CurrentContractForm {
   symbol: string | undefined,
@@ -319,15 +321,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
     if (!wallet) {
       return
     }
-    const instructions: TransactionInstruction[] = [];
-    const currentTime = new Date().getTime();
-    const buf: Buffer = Buffer.from([
-      0, // instruction_enum
-      2, // decimals
-      currentTime + 2000, // expiry
-      56700, // strike
-      5 // strike_exponent
-    ]);
     // create_mint(
     //   cls,
     //   conn: Client,
@@ -433,6 +426,8 @@ export const TransactionModal = (props: TransactionModalProps) => {
     const mintWallet = Keypair.generate()
     const source = mintWallet.publicKey
     const source_account = Keypair.fromSecretKey(mintWallet.secretKey)
+    console.log(source_account.publicKey.toString())
+    console.log(source.toString())
     const fromAirdropSignature = await connection.requestAirdrop(
       mintWallet.publicKey,
       LAMPORTS_PER_SOL,
@@ -448,7 +443,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
       9,
       TOKEN_PROGRAM_ID,
     );
-    const escrow_mint_account = new PublicKey(escrow_mint)
+    const escrow_mint_account = new PublicKey(escrow_mint.publicKey)
     
     const pool = new Keypair()
     const long_escrow = new Keypair()
@@ -471,12 +466,31 @@ export const TransactionModal = (props: TransactionModalProps) => {
       long_mint,
       short_mint,
       long_escrow,
-      short_escrow,
+      source_account,
+      // short_escrow, // not found?
       pool
     ];
-    
+
+    console.log("source_account:", source_account.publicKey?.toString())
+    console.log("long_mint:", long_mint.publicKey?.toString())
+    console.log("short_mint:", short_mint.publicKey?.toString())
+    console.log("long_escrow:", long_escrow.publicKey?.toString())
+    console.log("short_escrow:", short_escrow.publicKey?.toString())
+    console.log("pool:", pool.publicKey?.toString())
+    console.log("wallet:", wallet.publicKey?.toString())
+    const instructions: TransactionInstruction[] = [];
+    const currentTime = new Date().getTime();
+    const buf: Buffer = Buffer.from([
+      0, // instruction_enum
+      2, // decimals
+      currentTime + 2000, // expiry
+      56700, // strike
+      5 // strike_exponent
+    ]);
+
     instructions.push(
       new TransactionInstruction({
+        // data: buf,
         keys: [
           {
             pubkey: pool_account,
@@ -484,7 +498,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
             isWritable: true,
           },
           {
-            pubkey: escrow_mint,
+            pubkey: escrow_mint_account,
             isSigner: false,
             isWritable: false,
           },
@@ -494,22 +508,22 @@ export const TransactionModal = (props: TransactionModalProps) => {
             isWritable: true,
           },
           {
-            pubkey: long_token_mint,
+            pubkey: long_token_mint_account,
             isSigner: true,
             isWritable: false,
           },
           {
-            pubkey: short_token_mint,
+            pubkey: short_token_mint_account,
             isSigner: true,
             isWritable: false,
           },
           {
-            pubkey: mint_authority,
+            pubkey: mint_authority_account,
             isSigner: true,
             isWritable: false,
           },
           {
-            pubkey: update_authority,
+            pubkey: update_authority_account,
             isSigner: true,
             isWritable: false,
           },
@@ -529,10 +543,74 @@ export const TransactionModal = (props: TransactionModalProps) => {
             isWritable: false,
           },
         ],
-        programId: program_id,
+        programId: BINARY_OPTION_PROGRAM_ID,
       })
     );
-    return {instructions, signers};
+    if (!wallet?.publicKey) {
+      throw new Error("Wallet is not connected");
+    }
+  
+    let transaction = new Transaction();
+    // transaction.feePayer = wallet.publicKey
+    transaction.feePayer = source_account.publicKey;
+    instructions.forEach((instruction) => transaction.add(instruction))
+
+    transaction.recentBlockhash = (
+      await connection.getRecentBlockhash("max")
+    ).blockhash;
+
+    console.log(transaction)
+    // transaction = await wallet.signTransaction(transaction);
+
+    signers.forEach((s) => {
+      console.log("signing with: ", s.publicKey.toString())
+    });
+    transaction.sign(...signers)
+    console.log(transaction)
+
+    const rawTransaction = transaction.serialize();
+
+    let sendOptions = {
+      skipPreflight: false,
+      preflightCommitment: "confirmed" as Commitment,
+    };
+
+    let confirmOptions = {
+      skipPreflight: true,
+      commitment: "confirmed",
+    };
+    const txid = await connection.sendRawTransaction(rawTransaction, sendOptions);
+
+    const awaitConfirmation = true;
+
+    if (awaitConfirmation) {
+      const status = (
+        await connection.confirmTransaction(
+          txid,
+          confirmOptions && (confirmOptions.commitment as any)
+        )
+      ).value;
+  
+      if (status?.err) {
+        const errors = await getErrorForTransaction(connection, txid);
+        notify({
+          message: "Transaction failed...",
+          description: (
+            <>
+              {errors.map((err) => (
+                <div>{err}</div>
+              ))}
+              <ExplorerLink address={txid} type="transaction" />
+            </>
+          ),
+          type: "error",
+        });
+  
+        throw new Error(
+          `Raw transaction ${txid} failed (${JSON.stringify(status)})`
+        );
+      }
+    }
   }
 
   return (

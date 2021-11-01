@@ -3,6 +3,7 @@ import {
   Account,
   clusterApiUrl,
   Connection,
+  Keypair,
   PublicKey,
   Transaction,
   TransactionInstruction,
@@ -203,7 +204,7 @@ export function useSlippageConfig() {
   return { slippage, setSlippage };
 }
 
-const getErrorForTransaction = async (connection: Connection, txid: string) => {
+export const getErrorForTransaction = async (connection: Connection, txid: string) => {
   // wait for all confirmation before geting transaction
   await connection.confirmTransaction(txid, "max");
 
@@ -234,7 +235,7 @@ export const sendTransaction = async (
   connection: Connection,
   wallet: WalletAdapter,
   instructions: TransactionInstruction[],
-  signers: Account[],
+  signers: Keypair[],
   awaitConfirmation = true
 ) => {
   if (!wallet?.publicKey) {
