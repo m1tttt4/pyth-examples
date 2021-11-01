@@ -1,8 +1,14 @@
-import { Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
+import { Keypair, TransactionInstruction } from "@solana/web3.js";
+import { Token } from "@solana/spl-token";
 import { Pyth } from "../Icons/pyth";
 import type { Moment } from "moment";
 import moment from "moment";
-import { BINARY_OPTIONS_ID } from "../../utils/ids";
+import {
+  BINARY_OPTION_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+  SYSTEM_PROGRAM_ID,
+  SYSVAR_RENT_ID
+} from "../../utils/ids";
 import { notify } from "../../utils/notifications";
 import { Button, DatePicker, Modal, InputNumber } from "antd";
 import React, {
@@ -191,6 +197,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
   function handleBuyContract(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     event.preventDefault();
     console.log("handleBuyContract", currentContract)
+    initializeBinaryOptTransaction()
   }
 
   function evaluateSubmitable(form: CurrentContractForm) {
@@ -299,23 +306,67 @@ export const TransactionModal = (props: TransactionModalProps) => {
       socket
   ])
 
-  const initializeBinaryOptTransaction = (
-    props: BinaryOptInstructionProps
+  const initializeBinaryOptTransaction = async (
+    // props: BinaryOptInstructionProps
   ) => {
     if (!wallet) {
       return
     }
     const instructions: TransactionInstruction[] = [];
+    const currentTime = new Date().getTime();
     const buf: Buffer = Buffer.from([
-      props.instruction_enum,
-      props.decimals,
-      props.expiry,
-      props.strike,
-      props.strike_exponent
+      0, // instruction_enum
+      2, // decimals
+      currentTime + 2000, // expiry
+      56700, // strike
+      5 // strike_exponent
     ]);
+    // create_mint(
+    //   cls,
+    //   conn: Client,
+    //   payer: Keypair,
+    //   mint_authority: PublicKey,
+    //   decimals: int,
+    //   program_id: PublicKey,
+    //   freeze_authority: Optional[PublicKey] = None,
+    //   skip_confirmation: bool = False,
+    //   recent_blockhash: Optional[Blockhash] = None,
+    // ) -> Token:
+        // """Create and initialize a token.
+        // :param conn: RPC connection to a solana cluster.
+        // :param payer: Fee payer for transaction.
+        // :param mint_authority: Account or multisig that will control minting.
+        // :param decimals: Location of the decimal place.
+        // :param program_id: SPL Token program account.
+        // :param freeze_authority: (optional) Account or multisig that can freeze token accounts.
+        // :param skip_confirmation: (optional) Option to skip transaction confirmation.
+        // :return: Token object for the newly minted token.
+        // If skip confirmation is set to `False`, this method will block for at most 30 seconds
+        // or until the transaction is confirmed.
+        // """
+        // # Allocate memory for the account
+        // balance_needed = Token.get_min_balance_rent_for_exempt_for_mint(conn)
+        // # Construct transaction
+        // token, txn, payer, mint_account, opts = _TokenCore._create_mint_args(
+        //     conn, payer, mint_authority, decimals, program_id, freeze_authority, skip_confirmation, balance_needed, cls
+        // )
+        // # Send the two instructions
+        // conn.send_transaction(txn, payer, mint_account, opts=opts, recent_blockhash=recent_blockhash)
+        // return cast(Token, token)
+
+    const mintWallet = Keypair.generate()
+    const source = mintWallet.publicKey
+    const source_account = Keypair.fromSecretKey(mintWallet.secretKey)
+    const mint = await Token.createMint(
+      connection,
+      mintWallet,
+      mintWallet.publicKey,
+      null,
+      9,
+      TOKEN_PROGRAM_ID,
+    );
+    
     // const escrow_mint_account = new PublicKey(escrow_mint)
-    const source = new Keypair()
-    const source_account = new Keypair(source.secretKey.toBase58())
     
     const pool = new Keypair()
     const long_escrow = new Keypair()
@@ -329,9 +380,9 @@ export const TransactionModal = (props: TransactionModalProps) => {
     const short_token_mint_account = short_mint.publicKey
     const mint_authority_account = source_account.publicKey
     const update_authority_account = source_account.publicKey
-    const token_account = PublicKey(TOKEN_PROGRAM_ID)
-    const system_account = PublicKey(SYSTEM_PROGRAM_ID)
-    const rent_account = PublicKey(SYSVAR_RENT_ID)
+    const token_account = TOKEN_PROGRAM_ID
+    const system_account = SYSTEM_PROGRAM_ID
+    const rent_account = SYSVAR_RENT_ID
 
     const signers: Keypair[] = [
       source_account,
@@ -342,63 +393,63 @@ export const TransactionModal = (props: TransactionModalProps) => {
       pool
     ];
     
-    instructions.push(
-      new TransactionInstruction({
-        keys: [
-          {
-            pubkey: props.pool_account,
-            isSigner: true,
-            isWritable: true,
-          },
-          {
-            pubkey: props.escrow_mint,
-            isSigner: false,
-            isWritable: false,
-          },
-          {
-            pubkey: props.escrow_account,
-            isSigner: true,
-            isWritable: true,
-          },
-          {
-            pubkey: props.long_token_mint,
-            isSigner: true,
-            isWritable: false,
-          },
-          {
-            pubkey: props.short_token_mint,
-            isSigner: true,
-            isWritable: false,
-          },
-          {
-            pubkey: props.mint_authority,
-            isSigner: true,
-            isWritable: false,
-          },
-          {
-            pubkey: props.update_authority,
-            isSigner: true,
-            isWritable: false,
-          },
-          {
-            pubkey: props.token_account,
-            isSigner: false,
-            isWritable: false,
-          },
-          {
-            pubkey: props.system_account,
-            isSigner: false,
-            isWritable: false,
-          },
-          {
-            pubkey: props.rent_account,
-            isSigner: false,
-            isWritable: false,
-          },
-        ],
-        programId: props.program_id,
-      })
-    );
+    // instructions.push(
+    //   new TransactionInstruction({
+    //     keys: [
+    //       {
+    //         pubkey: pool_account,
+    //         isSigner: true,
+    //         isWritable: true,
+    //       },
+    //       {
+    //         pubkey: escrow_mint,
+    //         isSigner: false,
+    //         isWritable: false,
+    //       },
+    //       {
+    //         pubkey: escrow_account,
+    //         isSigner: true,
+    //         isWritable: true,
+    //       },
+    //       {
+    //         pubkey: long_token_mint,
+    //         isSigner: true,
+    //         isWritable: false,
+    //       },
+    //       {
+    //         pubkey: short_token_mint,
+    //         isSigner: true,
+    //         isWritable: false,
+    //       },
+    //       {
+    //         pubkey: mint_authority,
+    //         isSigner: true,
+    //         isWritable: false,
+    //       },
+    //       {
+    //         pubkey: update_authority,
+    //         isSigner: true,
+    //         isWritable: false,
+    //       },
+    //       {
+    //         pubkey: token_account,
+    //         isSigner: false,
+    //         isWritable: false,
+    //       },
+    //       {
+    //         pubkey: system_account,
+    //         isSigner: false,
+    //         isWritable: false,
+    //       },
+    //       {
+    //         pubkey: rent_account,
+    //         isSigner: false,
+    //         isWritable: false,
+    //       },
+    //     ],
+    //     programId: program_id,
+    //   })
+    // );
     return {instructions, signers};
   }
 
