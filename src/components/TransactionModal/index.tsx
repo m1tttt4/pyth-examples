@@ -1,15 +1,12 @@
 import {
-  Commitment,
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
   sendAndConfirmTransaction,
   Transaction,
   TransactionInstruction,
-  SYSTEM_INSTRUCTION_LAYOUTS,
-  AccountMeta
 } from "@solana/web3.js";
-import { Token, u64 } from "@solana/spl-token";
+import { Token } from "@solana/spl-token";
 import { Pyth } from "../Icons/pyth";
 import type { Moment } from "moment";
 import moment from "moment";
@@ -27,31 +24,14 @@ import React, {
   useEffect,
   useState
 } from "react";
-import bs58 from "bs58";
 import sigFigs from "../../utils/sigFigs";
 
-import { getErrorForTransaction, sendTransaction, useConnection } from "../../contexts/connection";
+import { useConnection } from "../../contexts/connection";
 import { useWallet } from "../../contexts/wallet";
-import { BinaryOptInstructionProps, useTransaction } from "../../contexts/transaction";
+import { useTransaction } from "../../contexts/transaction";
 import { ContractsTable } from "../ContractsTable";
 import { SocketContext } from "../../contexts/socket";
 import { MatchableContract, MatchableContractProvider, useMatchableContract } from "../../contexts/contracts";
-
-import Crypto from "crypto";
-
-// export class u8 extends BN {
-//     toBuffer(): Buffer;
-//     static fromBuffer(buffer: Buffer): u8;
-// };
-
-
-import {
-  publicKey,
-  uint64,
-  uint128,
-  rustString
-} from "../../utils/layout";
-
 import { ExplorerLink } from "../ExplorerLink";
 import BN from "bn.js";
 
@@ -331,7 +311,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
   const initializeBinaryOptTransaction = async () => {
 
     const sourceAccount = new Keypair()
-    const decryptionKey_bytes = Crypto.randomBytes(31)
 
     const airdropSignature = await connection.requestAirdrop(
       sourceAccount.publicKey,
