@@ -5,9 +5,10 @@ import {
   PublicKey,
   sendAndConfirmTransaction,
   Transaction,
-  TransactionInstruction
+  TransactionInstruction,
+  SYSTEM_INSTRUCTION_LAYOUTS
 } from "@solana/web3.js";
-import { Token } from "@solana/spl-token";
+import { Token, u64 } from "@solana/spl-token";
 import { Pyth } from "../Icons/pyth";
 import type { Moment } from "moment";
 import moment from "moment";
@@ -25,6 +26,7 @@ import React, {
   useEffect,
   useState
 } from "react";
+import bs58 from "bs58";
 import sigFigs from "../../utils/sigFigs";
 
 import { getErrorForTransaction, sendTransaction, useConnection } from "../../contexts/connection";
@@ -34,13 +36,22 @@ import { ContractsTable } from "../ContractsTable";
 import { SocketContext } from "../../contexts/socket";
 import { MatchableContract, MatchableContractProvider, useMatchableContract } from "../../contexts/contracts";
 
+
+// export class u8 extends BN {
+//     toBuffer(): Buffer;
+//     static fromBuffer(buffer: Buffer): u8;
+// };
+
+
 import {
   publicKey,
   uint64,
   uint128,
   rustString
 } from "../../utils/layout";
+
 import { ExplorerLink } from "../ExplorerLink";
+import BN from "bn.js";
 
 export interface CurrentContractForm {
   symbol: string | undefined,
@@ -479,18 +490,20 @@ export const TransactionModal = (props: TransactionModalProps) => {
     console.log("pool:", pool.publicKey?.toString())
     console.log("wallet:", wallet.publicKey?.toString())
     const instructions: TransactionInstruction[] = [];
-    const currentTime = new Date().getTime();
-    const buf: Buffer = Buffer.from([
-      0, // instruction_enum
-      2, // decimals
-      currentTime + 2000, // expiry
-      56700, // strike
-      5 // strike_exponent
-    ]);
+    const currentTime = new Date().getTime() + 2000;
+    let type = SYSTEM_INSTRUCTION_LAYOUTS.Transfer;
+    let data = Buffer.from(Uint8Array.of(
+      0,
+      2,
+      ...new BN(currentTime).toArray("le", 8),
+      ...new BN(56700).toArray("le", 8),
+      ...new BN(5).toArray("le", 8)
+    ))
 
+    console.log(data)
     instructions.push(
       new TransactionInstruction({
-        // data: buf,
+        programId: BINARY_OPTION_PROGRAM_ID,
         keys: [
           {
             pubkey: pool_account,
@@ -543,13 +556,14 @@ export const TransactionModal = (props: TransactionModalProps) => {
             isWritable: false,
           },
         ],
-        programId: BINARY_OPTION_PROGRAM_ID,
+        data: data,
       })
     );
     if (!wallet?.publicKey) {
       throw new Error("Wallet is not connected");
     }
-  
+    console.log(instructions[0].data)
+    console.info(instructions[0].keys[0].pubkey.toBytes())
     let transaction = new Transaction();
     // transaction.feePayer = wallet.publicKey
     transaction.feePayer = source_account.publicKey;
@@ -590,7 +604,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
           confirmOptions && (confirmOptions.commitment as any)
         )
       ).value;
-  
+      console.log(status)
       if (status?.err) {
         const errors = await getErrorForTransaction(connection, txid);
         notify({
