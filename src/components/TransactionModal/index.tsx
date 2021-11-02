@@ -6,7 +6,8 @@ import {
   sendAndConfirmTransaction,
   Transaction,
   TransactionInstruction,
-  SYSTEM_INSTRUCTION_LAYOUTS
+  SYSTEM_INSTRUCTION_LAYOUTS,
+  AccountMeta
 } from "@solana/web3.js";
 import { Token, u64 } from "@solana/spl-token";
 import { Pyth } from "../Icons/pyth";
@@ -36,6 +37,7 @@ import { ContractsTable } from "../ContractsTable";
 import { SocketContext } from "../../contexts/socket";
 import { MatchableContract, MatchableContractProvider, useMatchableContract } from "../../contexts/contracts";
 
+import Crypto from "crypto";
 
 // export class u8 extends BN {
 //     toBuffer(): Buffer;
@@ -326,267 +328,153 @@ export const TransactionModal = (props: TransactionModalProps) => {
       socket
   ])
 
-  const initializeBinaryOptTransaction = async (
-    // props: BinaryOptInstructionProps
-  ) => {
-    if (!wallet) {
-      return
-    }
-    // create_mint(
-    //   cls,
-    //   conn: Client,
-    //   payer: Keypair,
-    //   mint_authority: PublicKey,
-    //   decimals: int,
-    //   program_id: PublicKey,
-    //   freeze_authority: Optional[PublicKey] = None,
-    //   skip_confirmation: bool = False,
-    //   recent_blockhash: Optional[Blockhash] = None,
-    // ) -> Token:
-        // """Create and initialize a token.
-        // :param conn: RPC connection to a solana cluster.
-        // :param payer: Fee payer for transaction.
-        // :param mint_authority: Account or multisig that will control minting.
-        // :param decimals: Location of the decimal place.
-        // :param program_id: SPL Token program account.
-        // :param freeze_authority: (optional) Account or multisig that can freeze token accounts.
-        // :param skip_confirmation: (optional) Option to skip transaction confirmation.
-        // :return: Token object for the newly minted token.
-        // If skip confirmation is set to `False`, this method will block for at most 30 seconds
-        // or until the transaction is confirmed.
-        // """
-        // # Allocate memory for the account
-        // balance_needed = Token.get_min_balance_rent_for_exempt_for_mint(conn)
-        // # Construct transaction
-        // token, txn, payer, mint_account, opts = _TokenCore._create_mint_args(
-        //     conn, payer, mint_authority, decimals, program_id, freeze_authority, skip_confirmation, balance_needed, cls
-        // )
-        // # Send the two instructions
-        // conn.send_transaction(txn, payer, mint_account, opts=opts, recent_blockhash=recent_blockhash)
-        // return cast(Token, token)
+  const initializeBinaryOptTransaction = async () => {
 
-    // const mintWallet = Keypair.generate()
-    // const source = mintWallet.publicKey
-    // const source_account = Keypair.fromSecretKey(mintWallet.secretKey)
-    // const fromAirdropSignature = await connection.requestAirdrop(
-      // mintWallet.publicKey,
-      // LAMPORTS_PER_SOL,
-    // );
-    // //wait for airdrop confirmation
-    // await connection.confirmTransaction(fromAirdropSignature);
+    const sourceAccount = new Keypair()
+    const decryptionKey_bytes = Crypto.randomBytes(31)
 
-    // const mint = await Token.createMint(
-      // connection,
-      // mintWallet,
-      // mintWallet.publicKey,
-      // null,
-      // 9,
-      // TOKEN_PROGRAM_ID,
-    // );
-    // //get the token account of the fromWallet Solana address, if it does not exist, create it
-    // const fromTokenAccount = await mint.getOrCreateAssociatedAccountInfo(
-      // mintWallet.publicKey,
-    // );
-
-    // // Generate a new wallet to receive newly minted token
-    // var toWallet = Keypair.generate();
-
-    // //get the token account of the toWallet Solana address, if it does not exist, create it
-    // var toTokenAccount = await mint.getOrCreateAssociatedAccountInfo(
-      // toWallet.publicKey,
-    // );
-
-    // //minting 1 new token to the "fromTokenAccount" account we just returned/created
-    // await mint.mintTo(
-      // fromTokenAccount.address, //who it goes to
-      // mintWallet.publicKey, // minting authority
-      // [], // multisig
-      // 1000000000, // how many
-    // );
-
-    // await mint.setAuthority(
-      // mint.publicKey,
-      // null,
-      // "MintTokens",
-      // mintWallet.publicKey,
-      // []
-    // )
-
-    // // Add token transfer instructions to transaction
-    // var transaction = new Transaction().add(
-      // Token.createTransferInstruction(
-        // TOKEN_PROGRAM_ID,
-        // fromTokenAccount.address,
-        // toTokenAccount.address,
-        // mintWallet.publicKey,
-        // [],
-        // 1,
-      // ),
-    // );
-
-    // // Sign transaction, broadcast, and confirm
-    // var signature = await sendAndConfirmTransaction(
-      // connection,
-      // transaction,
-      // [mintWallet],
-      // {commitment: 'confirmed'},
-    // );
-    // console.log('SIGNATURE', signature);
-
-    
-    const mintWallet = new Keypair()
-    const fromAirdropSignature = await connection.requestAirdrop(
-      mintWallet.publicKey,
+    const airdropSignature = await connection.requestAirdrop(
+      sourceAccount.publicKey,
       LAMPORTS_PER_SOL,
     );
-    //wait for airdrop confirmation
-    await connection.confirmTransaction(fromAirdropSignature);
 
-    const escrow_mint = await Token.createMint(
+    await connection.confirmTransaction(airdropSignature);
+
+    const token = await Token.createMint(
       connection,
-      mintWallet,
-      mintWallet.publicKey,
+      sourceAccount,
+      sourceAccount.publicKey,
       null,
       9,
       TOKEN_PROGRAM_ID,
     );
-    
 
+    console.log(token)
 
-    const escrow_mint_account = new PublicKey(escrow_mint.publicKey)
-    
     const pool = new Keypair()
-    const long_escrow = new Keypair()
-    const short_escrow = new Keypair()
-    const long_mint = new Keypair()
-    const short_mint = new Keypair()
+    const longEscrow = new Keypair()
+    const shortEscrow = new Keypair()
+    const longMint = new Keypair()
+    const shortMint = new Keypair()
+    const poolAccount = pool.publicKey
+    const escrowMintAccount = token.publicKey
+    const escrowAccount = longEscrow.publicKey
+    const longTokenMintAccount = longMint.publicKey
+    const shortTokenMintAccount = shortMint.publicKey
+    const mintAuthorityAccount = sourceAccount.publicKey
+    const updateAuthorityAccount = sourceAccount.publicKey
+    const tokenAccount = TOKEN_PROGRAM_ID
+    const systemAccount = SYSTEM_PROGRAM_ID
+    const rentAccount = SYSVAR_RENT_ID
 
-    const pool_account = pool.publicKey
-    const escrow_account = long_escrow.publicKey
-    const long_token_mint_account = long_mint.publicKey
-    const short_token_mint_account = short_mint.publicKey
-    const mint_authority_account = mintWallet.publicKey
-    const update_authority_account = mintWallet.publicKey
-    const token_account = TOKEN_PROGRAM_ID
-    const system_account = SYSTEM_PROGRAM_ID
-    const rent_account = SYSVAR_RENT_ID
+    console.log(
+      "sourceAccount", sourceAccount.publicKey.toString(),
+      "\nlongMint", longMint.publicKey.toString(),
+      "\nshortMint", shortMint.publicKey.toString(),
+      "\nlongEscrow", longEscrow.publicKey.toString(),
+      "\nshortEscrow", shortEscrow.publicKey.toString(),
+      "\npool", pool.publicKey.toString()
+    )
+    // const signers = [
+    //   sourceAccount,
+    //   longMint,
+    //   shortMint,
+    //   longEscrow,
+    //   // shortEscrow,
+    //   pool
+    // ]
+    
+    const signers = [
+      pool,
+      // shortEscrow,
+      longEscrow,
+      shortMint,
+      longMint,
+      sourceAccount,
+    ]
 
-    const signers: Keypair[] = [
-      mintWallet,
-      long_mint,
-      short_mint,
-      long_escrow,
-      // source_account,
-      // short_escrow, // not found?
-      pool
-    ];
+    const decimals = 2
+    const expiry = new Date().getTime() + 2000
+    const strike = 56700
+    const strikeExponent = 5
 
-    const instructions: TransactionInstruction[] = [];
-    const currentTime = new Date().getTime() + 2000;
-    let type = SYSTEM_INSTRUCTION_LAYOUTS.Transfer;
+    const initBinaryOptionIx = initializeBinaryOptionInstruction(
+      poolAccount,
+      escrowMintAccount,
+      escrowAccount,
+      longTokenMintAccount,
+      shortTokenMintAccount,
+      mintAuthorityAccount,
+      updateAuthorityAccount,
+      tokenAccount,
+      systemAccount,
+      rentAccount,
+      decimals,
+      expiry,
+      strike,
+      strikeExponent
+    )
+    console.log(initBinaryOptionIx)
+    
+    let transaction = new Transaction().add(initBinaryOptionIx)
+
+    await sendAndConfirmTransaction(connection, transaction, signers, {
+      commitment: 'singleGossip'
+    })
+  }
+
+  const initializeBinaryOptionInstruction = (
+    poolAccount: PublicKey,
+    escrowMintAccount: PublicKey,
+    escrowAccount: PublicKey,
+    longTokenMintAccount: PublicKey,
+    shortTokenMintAccount: PublicKey,
+    mintAuthorityAccount: PublicKey,
+    updateAuthorityAccount: PublicKey,
+    tokenAccount: PublicKey,
+    systemAccount: PublicKey,
+    rentAccount: PublicKey,
+    decimals: number, // u8
+    expiry: number, // u64
+    strike: number, // u64
+    strikeExponent: number // i64 - currently u64 for testing
+  ): TransactionInstruction => {
     let data = Buffer.from(Uint8Array.of(
       0,
-      2,
-      ...new BN(currentTime).toArray("le", 8),
-      ...new BN(56700).toArray("le", 8),
-      ...new BN(5).toArray("le", 8)
+      decimals,
+      ...new BN(expiry).toArray("le", 8),
+      ...new BN(strike).toArray("le", 8),
+      ...new BN(strikeExponent).toArray("le", 8)
     ))
-
-    console.log(data)
-    instructions.push(
-      new TransactionInstruction({
-        programId: BINARY_OPTION_PROGRAM_ID,
-        keys: [
-          { pubkey: pool_account, isSigner: true, isWritable: true },
-          { pubkey: escrow_mint_account, isSigner: false, isWritable: false, },
-          { pubkey: escrow_account, isSigner: true, isWritable: true, },
-          { pubkey: long_token_mint_account, isSigner: true, isWritable: false, },
-          { pubkey: short_token_mint_account, isSigner: true, isWritable: false, },
-          { pubkey: mint_authority_account, isSigner: true, isWritable: false, },
-          { pubkey: update_authority_account, isSigner: true, isWritable: false, },
-          { pubkey: token_account, isSigner: false, isWritable: false, },
-          { pubkey: system_account, isSigner: false, isWritable: false, },
-          { pubkey: rent_account, isSigner: false, isWritable: false, },
-        ],
-        data: data,
-      })
-    );
-    
-    if (!wallet?.publicKey) {
-      throw new Error("Wallet is not connected");
-    }
-    
-    console.log("mintWallet:", mintWallet.publicKey?.toString())
-    console.log("long_mint:", long_mint.publicKey?.toString())
-    console.log("short_mint:", short_mint.publicKey?.toString())
-    console.log("long_escrow:", long_escrow.publicKey?.toString())
-    console.log("short_escrow:", short_escrow.publicKey?.toString())
-    console.log("pool:", pool.publicKey?.toString())
-    console.log("wallet:", wallet.publicKey?.toString())
-    console.log(instructions[0].data)
-    console.info(instructions[0].keys[0].pubkey.toBytes())
-    let transaction = new Transaction();
-    // transaction.feePayer = wallet.publicKey
-    // transaction.feePayer = source_account.publicKey;
-    instructions.forEach((instruction) => transaction.add(instruction))
-
-    transaction.recentBlockhash = (
-      await connection.getRecentBlockhash("max")
-    ).blockhash;
-
-    console.log(transaction)
-    // transaction = await wallet.signTransaction(transaction);
-
-    // signers.forEach((s) => {
-    //   console.log("signing with: ", s.publicKey.toString())
-    // });
-    transaction.sign(...signers)
-    console.log(transaction)
-
-    const rawTransaction = transaction.serialize();
-
-    let sendOptions = {
-      skipPreflight: false,
-      preflightCommitment: "confirmed" as Commitment,
-    };
-
-    let confirmOptions = {
-      skipPreflight: true,
-      commitment: "confirmed",
-    };
-    const txid = await connection.sendRawTransaction(rawTransaction, sendOptions);
-
-    const awaitConfirmation = true;
-
-    if (awaitConfirmation) {
-      const status = (
-        await connection.confirmTransaction(
-          txid,
-          confirmOptions && (confirmOptions.commitment as any)
-        )
-      ).value;
-      console.log(status)
-      if (status?.err) {
-        const errors = await getErrorForTransaction(connection, txid);
-        notify({
-          message: "Transaction failed...",
-          description: (
-            <>
-              {errors.map((err) => (
-                <div>{err}</div>
-              ))}
-              <ExplorerLink address={txid} type="transaction" />
-            </>
-          ),
-          type: "error",
-        });
-  
-        throw new Error(
-          `Raw transaction ${txid} failed (${JSON.stringify(status)})`
-        );
-      }
-    }
+    return new TransactionInstruction({
+      programId: BINARY_OPTION_PROGRAM_ID,
+      keys: [ // original
+        { pubkey: poolAccount, isSigner: true, isWritable: true },
+        { pubkey: escrowMintAccount, isSigner: false, isWritable: false },
+        { pubkey: escrowAccount, isSigner: true, isWritable: true },
+        { pubkey: longTokenMintAccount, isSigner: true, isWritable: false },
+        { pubkey: shortTokenMintAccount, isSigner: true, isWritable: false },
+        { pubkey: mintAuthorityAccount, isSigner: true, isWritable: false },
+        { pubkey: updateAuthorityAccount, isSigner: true, isWritable: false },
+        { pubkey: tokenAccount, isSigner: false, isWritable: false },
+        { pubkey: systemAccount, isSigner: false, isWritable: false },
+        { pubkey: rentAccount, isSigner: false, isWritable: false },
+      ],
+      data: data,
+    })
   }
+      // keys: [
+      //   { pubkey: rentAccount, isSigner: false, isWritable: false },
+      //   { pubkey: systemAccount, isSigner: false, isWritable: false },
+      //   { pubkey: tokenAccount, isSigner: false, isWritable: false },
+      //   { pubkey: updateAuthorityAccount, isSigner: true, isWritable: false },
+      //   { pubkey: mintAuthorityAccount, isSigner: true, isWritable: false },
+      //   { pubkey: shortTokenMintAccount, isSigner: true, isWritable: false },
+      //   { pubkey: longTokenMintAccount, isSigner: true, isWritable: false },
+      //   { pubkey: escrowAccount, isSigner: true, isWritable: true },
+      //   { pubkey: escrowMintAccount, isSigner: false, isWritable: false },
+      //   { pubkey: poolAccount, isSigner: true, isWritable: true },
+      // ],
 
   return (
     <Modal
