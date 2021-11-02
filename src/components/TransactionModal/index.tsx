@@ -6,7 +6,8 @@ import {
   sendAndConfirmTransaction,
   Transaction,
   TransactionInstruction,
-  SYSTEM_INSTRUCTION_LAYOUTS
+  SYSTEM_INSTRUCTION_LAYOUTS,
+  SystemProgram
 } from "@solana/web3.js";
 import { Token, u64 } from "@solana/spl-token";
 import { Pyth } from "../Icons/pyth";
@@ -35,6 +36,7 @@ import { BinaryOptInstructionProps, useTransaction } from "../../contexts/transa
 import { ContractsTable } from "../ContractsTable";
 import { SocketContext } from "../../contexts/socket";
 import { MatchableContract, MatchableContractProvider, useMatchableContract } from "../../contexts/contracts";
+import crypto from "crypto";
 
 
 // export class u8 extends BN {
@@ -51,7 +53,7 @@ import {
 } from "../../utils/layout";
 
 import { ExplorerLink } from "../ExplorerLink";
-import BN from "bn.js";
+import BN, { min } from "bn.js";
 
 export interface CurrentContractForm {
   symbol: string | undefined,
@@ -437,8 +439,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
     const mintWallet = Keypair.generate()
     const source = mintWallet.publicKey
     const source_account = Keypair.fromSecretKey(mintWallet.secretKey)
-    console.log(source_account.publicKey.toString())
-    console.log(source.toString())
     const fromAirdropSignature = await connection.requestAirdrop(
       mintWallet.publicKey,
       LAMPORTS_PER_SOL,
@@ -454,7 +454,15 @@ export const TransactionModal = (props: TransactionModalProps) => {
       9,
       TOKEN_PROGRAM_ID,
     );
+    // let highEntropyBuffer = crypto.randomBytes(31);
+    // let escrow_mint_account = await PublicKey.createProgramAddress([highEntropyBuffer.slice(0, 31)], BINARY_OPTION_PROGRAM_ID);
+    // console.log(`Generated Program Address: ${escrow_mint_account.toBase58()}`);
+
+    // const escrow_mint_account = await PublicKey.createProgramAddress([escrow_mint.publicKey.toBytes()], BINARY_OPTION_PROGRAM_ID)
     const escrow_mint_account = new PublicKey(escrow_mint.publicKey)
+    // const escrow_mint_account = await escrow_mint.getOrCreateAssociatedAccountInfo(
+    //   escrow_mint.publicKey
+    // )
     
     const pool = new Keypair()
     const long_escrow = new Keypair()
@@ -477,18 +485,11 @@ export const TransactionModal = (props: TransactionModalProps) => {
       long_mint,
       short_mint,
       long_escrow,
-      source_account,
+      // source_account,
       // short_escrow, // not found?
       pool
     ];
 
-    console.log("source_account:", source_account.publicKey?.toString())
-    console.log("long_mint:", long_mint.publicKey?.toString())
-    console.log("short_mint:", short_mint.publicKey?.toString())
-    console.log("long_escrow:", long_escrow.publicKey?.toString())
-    console.log("short_escrow:", short_escrow.publicKey?.toString())
-    console.log("pool:", pool.publicKey?.toString())
-    console.log("wallet:", wallet.publicKey?.toString())
     const instructions: TransactionInstruction[] = [];
     const currentTime = new Date().getTime() + 2000;
     let type = SYSTEM_INSTRUCTION_LAYOUTS.Transfer;
@@ -505,68 +506,37 @@ export const TransactionModal = (props: TransactionModalProps) => {
       new TransactionInstruction({
         programId: BINARY_OPTION_PROGRAM_ID,
         keys: [
-          {
-            pubkey: pool_account,
-            isSigner: true,
-            isWritable: true,
-          },
-          {
-            pubkey: escrow_mint_account,
-            isSigner: false,
-            isWritable: false,
-          },
-          {
-            pubkey: escrow_account,
-            isSigner: true,
-            isWritable: true,
-          },
-          {
-            pubkey: long_token_mint_account,
-            isSigner: true,
-            isWritable: false,
-          },
-          {
-            pubkey: short_token_mint_account,
-            isSigner: true,
-            isWritable: false,
-          },
-          {
-            pubkey: mint_authority_account,
-            isSigner: true,
-            isWritable: false,
-          },
-          {
-            pubkey: update_authority_account,
-            isSigner: true,
-            isWritable: false,
-          },
-          {
-            pubkey: token_account,
-            isSigner: false,
-            isWritable: false,
-          },
-          {
-            pubkey: system_account,
-            isSigner: false,
-            isWritable: false,
-          },
-          {
-            pubkey: rent_account,
-            isSigner: false,
-            isWritable: false,
-          },
+          { pubkey: pool_account, isSigner: true, isWritable: true },
+          { pubkey: escrow_mint_account, isSigner: false, isWritable: false, },
+          { pubkey: escrow_account, isSigner: true, isWritable: true, },
+          { pubkey: long_token_mint_account, isSigner: true, isWritable: false, },
+          { pubkey: short_token_mint_account, isSigner: true, isWritable: false, },
+          { pubkey: mint_authority_account, isSigner: true, isWritable: false, },
+          { pubkey: update_authority_account, isSigner: true, isWritable: false, },
+          { pubkey: token_account, isSigner: false, isWritable: false, },
+          { pubkey: system_account, isSigner: false, isWritable: false, },
+          { pubkey: rent_account, isSigner: false, isWritable: false, },
         ],
         data: data,
       })
     );
+    
     if (!wallet?.publicKey) {
       throw new Error("Wallet is not connected");
     }
+    
+    console.log("source_account:", source_account.publicKey?.toString())
+    console.log("long_mint:", long_mint.publicKey?.toString())
+    console.log("short_mint:", short_mint.publicKey?.toString())
+    console.log("long_escrow:", long_escrow.publicKey?.toString())
+    console.log("short_escrow:", short_escrow.publicKey?.toString())
+    console.log("pool:", pool.publicKey?.toString())
+    console.log("wallet:", wallet.publicKey?.toString())
     console.log(instructions[0].data)
     console.info(instructions[0].keys[0].pubkey.toBytes())
     let transaction = new Transaction();
     // transaction.feePayer = wallet.publicKey
-    transaction.feePayer = source_account.publicKey;
+    // transaction.feePayer = source_account.publicKey;
     instructions.forEach((instruction) => transaction.add(instruction))
 
     transaction.recentBlockhash = (
@@ -576,9 +546,9 @@ export const TransactionModal = (props: TransactionModalProps) => {
     console.log(transaction)
     // transaction = await wallet.signTransaction(transaction);
 
-    signers.forEach((s) => {
-      console.log("signing with: ", s.publicKey.toString())
-    });
+    // signers.forEach((s) => {
+    //   console.log("signing with: ", s.publicKey.toString())
+    // });
     transaction.sign(...signers)
     console.log(transaction)
 
