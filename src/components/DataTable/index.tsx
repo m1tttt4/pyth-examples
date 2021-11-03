@@ -92,7 +92,7 @@ export const DataTable = () => {
         .map((s) => symbolMap[s]),
     [symbolMap]
   );
-  // console.log(products)
+  console.log(products)
   return (
     <>
       <div className="tableWrapper">

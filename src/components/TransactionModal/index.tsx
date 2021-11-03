@@ -354,23 +354,23 @@ export const TransactionModal = (props: TransactionModalProps) => {
       "\nshortEscrow", shortEscrow.publicKey.toString(),
       "\npool", pool.publicKey.toString()
     )
-    // const signers = [
-    //   sourceAccount,
-    //   longMint,
-    //   shortMint,
-    //   longEscrow,
-    //   // shortEscrow,
-    //   pool
-    // ]
-    
     const signers = [
-      pool,
-      // shortEscrow,
-      longEscrow,
-      shortMint,
-      longMint,
       sourceAccount,
+      longMint,
+      shortMint,
+      longEscrow,
+      // shortEscrow,
+      pool
     ]
+    
+    // const signers = [
+      // pool,
+      // // shortEscrow,
+      // longEscrow,
+      // shortMint,
+      // longMint,
+      // sourceAccount,
+    // ]
 
     const decimals = 2
     const expiry = new Date().getTime() + 2000
@@ -398,7 +398,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
     let transaction = new Transaction().add(initBinaryOptionIx)
 
     await sendAndConfirmTransaction(connection, transaction, signers, {
-      commitment: 'singleGossip'
+      commitment: 'confirmed'
     })
   }
 
@@ -431,8 +431,8 @@ export const TransactionModal = (props: TransactionModalProps) => {
         { pubkey: poolAccount, isSigner: true, isWritable: true },
         { pubkey: escrowMintAccount, isSigner: false, isWritable: false },
         { pubkey: escrowAccount, isSigner: true, isWritable: true },
-        { pubkey: longTokenMintAccount, isSigner: true, isWritable: false },
-        { pubkey: shortTokenMintAccount, isSigner: true, isWritable: false },
+        { pubkey: longTokenMintAccount, isSigner: true, isWritable: true },
+        { pubkey: shortTokenMintAccount, isSigner: true, isWritable: true },
         { pubkey: mintAuthorityAccount, isSigner: true, isWritable: false },
         { pubkey: updateAuthorityAccount, isSigner: true, isWritable: false },
         { pubkey: tokenAccount, isSigner: false, isWritable: false },
@@ -569,5 +569,5 @@ export const TransactionModal = (props: TransactionModalProps) => {
         </MatchableContractProvider>
       </div>
     </Modal>
-  );
+  )
 }
