@@ -397,9 +397,29 @@ export const TransactionModal = (props: TransactionModalProps) => {
     
     let transaction = new Transaction().add(initBinaryOptionIx)
 
+    // const txid = 
     await sendAndConfirmTransaction(connection, transaction, signers, {
-      commitment: 'confirmed'
+      commitment: "confirmed"
     })
+    // const status = (
+      // await connection.confirmTransaction(
+        // txid,
+        // "max"
+      // )
+    // ).value;
+
+    // console.log(txid, status)
+      // .then((txid) => {
+      // notify({
+        // message: "Transaction executed on Solana",
+        // description: (
+          // <>
+            // <ExplorerLink address={txid} type="transaction" />
+          // </>
+        // ),
+        // type: "success",
+      // });
+    // });
   }
 
   const initializeBinaryOptionInstruction = (
