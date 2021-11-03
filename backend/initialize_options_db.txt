@@ -1,0 +1,59 @@
+# psql -Upostgres -h localhost
+
+create role api_user with login password '___';
+alter role api_user createdb;
+\q;
+
+# psql -Uapi_user -h localhost
+create database soce;
+
+create table options_test ( 
+  id SERIAL PRIMARY KEY,
+  option_id VARCHAR(50) UNIQUE NOT NULL,
+  buyer_id VARCHAR(128),
+  seller_id VARCHAR(128),
+  buyer_percent NUMERIC,
+  seller_percent NUMERIC,
+  buyer_volume NUMERIC,
+  seller_volume NUMERIC,
+  created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+create table contracts_test (
+  id SERIAL PRIMARY KEY,
+  symbol VARCHAR(50) NOT NULL,
+  symbol_key VARCHAR(50) NOT NULL,
+  expiry VARCHAR(128) NOT NULL,
+  strike NUMERIC NOT NULL,
+  seller_id VARCHAR(128) NOT NULL,
+  seller_percent NUMERIC NOT NULL,
+  seller_volume NUMERIC NOT NULL,
+  buyer_id VARCHAR(128),
+  buyer_volume NUMERIC,
+  created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+insert into contracts_test (
+    symbol,
+    symbol_key,
+    expiry,
+    strike,
+    seller_id,
+    seller_percent,
+    seller_volume
+) VALUES (
+    'BTC/USD',
+    '3m1y5h2uv7EQL3KaJZehvAJa4yDNvgc5yAdL9KPMKwvk',
+    'Test Expiry Date 20211231',
+    '30000',
+    'Cp5NT7Kr93zHzeGsWDdDMjZwmJsz7NyhUTVk7uyW4amw',
+    '15',
+    '200'
+);
+
+
+
+
+
+
+

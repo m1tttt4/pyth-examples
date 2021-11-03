@@ -1,7 +1,7 @@
+import React, { useMemo, useState } from "react";
 import { PriceStatus } from "@pythnetwork/client";
 import { Account, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { Button, Col, Row, Table } from "antd";
-import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { sendTransaction, useConnection } from "../../contexts/connection";
 import { useWallet } from "../../contexts/wallet";
@@ -9,8 +9,9 @@ import usePyth from "../../hooks/usePyth";
 import { PYTH_HELLO_WORLD } from "../../utils/ids";
 import { notify } from "../../utils/notifications";
 import sigFigs from "../../utils/sigFigs";
-import { TransactionProvider } from "../../contexts/transaction";
+import { ProductObject, TransactionProvider } from "../../contexts/transaction";
 import { TransactionButton } from "../../components/TransactionButton";
+import { TransactionModal } from "../../components/TransactionModal";
 
 const handleClick = (e: React.MouseEvent<HTMLElement>) => {
   switch (e.detail) {
@@ -26,25 +27,12 @@ const handleClick = (e: React.MouseEvent<HTMLElement>) => {
   }
 };
 
+
+
 export const DataTable = () => {
   const { symbolMap } = usePyth();
-  const { wallet, connected, connect } = useWallet();
-  const connection = useConnection();
   const columnWidth = "auto" as string;
   const columnClassName = "table-column";
-  // const [filteredInfo, sortedInfo] = useState(Object);
-  // const [order, columnKey] = useState();
-  // const handleChange = (pagination: {}, filters: {}, sorter: {}) => {
-    // filteredInfo(filters);
-    // sortedInfo(sorter);
-  // };
-  // const clearFilters = () => {
-    // filteredInfo(null);
-  // };
-  // const clearAll = () => {
-    // filteredInfo(null);
-    // sortedInfo(Function);
-  // };
 
   const columns = [
     {
@@ -87,69 +75,16 @@ export const DataTable = () => {
       align: "right" as "right",
       width: `${columnWidth}`,
       className: `${columnClassName}`,
-      render: (value: string) => (
+      render: (value: ProductObject) => (
       <>
-        <TransactionProvider product={value}>
+        <TransactionProvider product={value} key={value.price.productAccountKey!.toBase58()}>
           <TransactionButton />
+          <TransactionModal />
         </TransactionProvider>
       </>
       ),
     },
   ];
-
-  const executeTest = () => {
-    if (!wallet) {
-      return;
-    }
-
-    const instructions: TransactionInstruction[] = [];
-    const signers: Account[] = [];
-    instructions.push(
-      new TransactionInstruction({
-        keys: [
-          {
-            // GOOG - product
-            pubkey: new PublicKey(
-              "CpPmHbFqkfejPcF8cvxyDogm32Sqo3YGMFBgv3kR1UtG"
-            ),
-            isSigner: false,
-            isWritable: false,
-          },
-          {
-            // GOOG - price
-            pubkey: new PublicKey(
-              "CZDpZ7KeMansnszdEGZ55C4HjGsMSQBzxPu6jqRm6ZrU"
-            ),
-            isSigner: false,
-            isWritable: false,
-          },
-        ],
-        programId: PYTH_HELLO_WORLD,
-      })
-    );
-    // send: 
-      // expiry: unix-timestamp,
-      // strike: float,
-      // publicKey: PublicKey,
-      // instruction: buy|sell
-      
-    sendTransaction(connection, wallet, instructions, signers).then((txid) => {
-      notify({
-        message: "Transaction executed on Solana",
-        description: (
-          <a
-            href={`https://explorer.solana.com/tx/${txid}?cluster=devnet`}
-            // eslint-disable-next-line react/jsx-no-target-blank
-            target="_blank"
-          >
-            Explorer Link
-          </a>
-        ),
-        type: "success",
-      });
-    });
-  };
-
   const products: object[] = useMemo(
     () =>
       Object.keys(symbolMap)
@@ -157,6 +92,7 @@ export const DataTable = () => {
         .map((s) => symbolMap[s]),
     [symbolMap]
   );
+  console.log(products)
   return (
     <>
       <div className="tableWrapper">
@@ -167,7 +103,7 @@ export const DataTable = () => {
                 columns={columns} 
                 onRow={(record, rowIndex) => {
                   return {
-                    onClick: (e) => { e.preventDefault(); handleClick(e) }, // click row
+                    onClick: (e) => { handleClick(e) }, // click row
                     onDoubleClick: (e) => { e.preventDefault(); },
                     onContextMenu: (e) => { e.preventDefault(); console.log('right click') }, // right button click row
                     onMouseEnter: (e) => {}, // mouse enter row
@@ -175,11 +111,6 @@ export const DataTable = () => {
                   };
                 }}
             />
-          </Col>
-          <Col span={24}>
-            <Button onClick={connected ? executeTest : connect}>
-              {connected ? "Execute Test Transaction" : "Connect Wallet"}
-            </Button>
           </Col>
           <Col span={24}>
             <Link to="/">

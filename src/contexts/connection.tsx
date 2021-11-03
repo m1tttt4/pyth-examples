@@ -3,6 +3,7 @@ import {
   Account,
   clusterApiUrl,
   Connection,
+  Keypair,
   PublicKey,
   Transaction,
   TransactionInstruction,
@@ -203,7 +204,7 @@ export function useSlippageConfig() {
   return { slippage, setSlippage };
 }
 
-const getErrorForTransaction = async (connection: Connection, txid: string) => {
+export const getErrorForTransaction = async (connection: Connection, txid: string) => {
   // wait for all confirmation before geting transaction
   await connection.confirmTransaction(txid, "max");
 
@@ -234,7 +235,7 @@ export const sendTransaction = async (
   connection: Connection,
   wallet: WalletAdapter,
   instructions: TransactionInstruction[],
-  signers: Account[],
+  signers: Keypair[],
   awaitConfirmation = true
 ) => {
   if (!wallet?.publicKey) {
@@ -242,20 +243,27 @@ export const sendTransaction = async (
   }
 
   let transaction = new Transaction();
+  
   instructions.forEach((instruction) => transaction.add(instruction));
+  
   transaction.recentBlockhash = (
     await connection.getRecentBlockhash("max")
   ).blockhash;
+ 
   transaction.setSigners(
     // fee payied by the wallet owner
     wallet.publicKey,
     ...signers.map((s) => s.publicKey)
   );
+  
   if (signers.length > 0) {
     transaction.partialSign(...signers);
   }
+  
   transaction = await wallet.signTransaction(transaction);
+  
   const rawTransaction = transaction.serialize();
+  
   let options = {
     skipPreflight: true,
     commitment: "singleGossip",

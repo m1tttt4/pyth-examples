@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+   <head>
+      <title>Socket.IO chat</title>
+      <style>
+         * { margin: 0; padding: 0; box-sizing: border-box; }
+         body { font: 13px Helvetica, Arial; }
+         form { background: #000; padding: 3px; position: fixed;   
+         bottom: 0; width: 100%; }
+         form input { border: 0; padding: 10px; width: 90%; 
+         margin-right: 0.5%; }
+         form button { width: 9%; background: rgb(130, 224, 255);
+         border: none; padding: 10px; }
+         #buyers { list-style-type: none; margin: 0; padding: 0; }
+         #buyers li { padding: 5px 10px; }
+         #buyers li:nth-child(odd) { background: #eee; }
+      </style>
+   </head>
+   <body>
+     <!-- option_id, buyer_id, buyer_percent, buyer_volume -->
+      <ul id="buyers"></ul>
+      <form action="">
+         <input id="option_id" autocomplete="off" placeholder="option_id"/>
+         <input id="buyer_id" autocomplete="off" placeholder="buyer_id"/>
+         <input id="buyer_percent" autocomplete="off" placeholder="buyer_percent"/>
+         <input id="buyer_volume" autocomplete="off" placeholder="buyer_volume"/>
+         <button>Send</button>
+      </form>
+      <script src="http://34.122.28.32:8001/socket.io/socket.io.js">.
+      </script>
+      <script>
+         const socket = io("http://34.122.28.32:8001");
+         const form = document.querySelector('form');
+         const buyers = document.querySelector('#buyers');
+         function createBuyer(buyer) {
+           const li = document.createElement('li');
+           li.textContent =`${buyer.option_id},${buyer.buyer_id},${buyer.buyer_percent},${buyer.buyer_volume},${buyer.created_at}`
+           buyers.append(li);
+         }
+         function createBuyers(buyers) {
+           buyers.forEach(createBuyer);
+         }
+
+         fetch("http://34.122.28.32:4000/options")
+         .then(res => res.json())
+         .then(createBuyers);
+         
+         form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            socket.emit('option', JSON.stringify({
+            option_id: document.querySelector('#option_id').value,
+            buyer_id: document.querySelector('#buyer_id').value,
+            buyer_percent: document.querySelector('#buyer_percent').value,
+            buyer_volume: document.querySelector('#buyer_volume').value,
+           }));
+            e.target.reset();
+         });
+         socket.on('option', function (buyers) {
+            console.log(buyers)
+            buyers.innerHTML = "";
+            createBuyers(buyers);
+         });
+         </script>
+   </body>
+</html>

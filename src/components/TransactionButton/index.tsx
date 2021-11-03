@@ -1,4 +1,4 @@
-import { Button, Dropdown, Menu } from "antd";
+import { Dropdown, Menu } from "antd";
 import { ButtonProps } from "antd/lib/button";
 import React from "react";
 import { LABELS } from "../../constants";
@@ -13,7 +13,7 @@ export interface TransactionButtonProps
 export const TransactionButton = (props: TransactionButtonProps) => {
   const { connected, connect, provider, select } = useWallet();
   const { selectTransaction } = useTransaction();
-  const { children, disabled, ...rest } = props;
+  const { disabled } = props;
 
   // only show if wallet selected or user connected
 
