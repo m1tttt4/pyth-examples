@@ -71,12 +71,12 @@ export const TransactionModal = (props: TransactionModalProps) => {
   const [ isContractMatchable, setContractMatchable ] = useState(false);
   const [ inputExpiry, setInputExpiry ] = useState<Moment | null | undefined>(moment());
   const [ inputStrike, setInputStrike ] = useState<number | undefined>(Math.round(productPrice!));
-  const [ inputPercent, setInputPercent ] = useState<number | undefined>(0);
+  const [ inputPercent, setInputPercent ] = useState<number | undefined>(49);
   const [ inputVolume, setInputVolume ] = useState<number | undefined>(0);
-  const [ sellerPercent, setSellerPercent ] = useState<number | undefined>(0);
+  const [ sellerPercent, setSellerPercent ] = useState<number | undefined>(49);
   const [ sellerVolume, setSellerVolume ] = useState<number | undefined>(0);
   const [ buyerVolume, setBuyerVolume ] = useState<number | undefined>(0);
-  const [ buyerPercent, setBuyerPercent ] = useState<number | undefined>(0);
+  const [ buyerPercent, setBuyerPercent ] = useState<number | undefined>(49);
   const [ buyerId, setBuyerId ] = useState<string | undefined>();
   const [ sellerId, setSellerId ] = useState<string | undefined>();
   const [ existingContracts, setExistingContracts ] = useState<CurrentContractForm[]>([]);
@@ -150,6 +150,8 @@ export const TransactionModal = (props: TransactionModalProps) => {
   function handleReset(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     setInputExpiry(moment());
     setInputStrike(Math.round(productPrice));
+    setInputVolume(0);
+    setSellerPercent(50);
     setSellerPercent(0);
     setSellerVolume(0);
     setBuyerPercent(0);
@@ -207,6 +209,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
       setSellerId(userWalletAddress)
     }
     if (matchableContracts?.length === 0) {
+      console.log('matchableContracts? ', matchableContracts)
       setContractMatchable(false)
     }
 
@@ -218,6 +221,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
     ){
       console.log('evaluateSubmitable - bad expiry or match found or no wallet: ', form)
       setContractListable(false);
+      setContractMatchable(false);
     } else { 
       if (
           form.expiry &&
@@ -231,6 +235,8 @@ export const TransactionModal = (props: TransactionModalProps) => {
         console.log('evalSubmit good')
       } else {
         setContractListable(false)
+        setContractMatchable(false);
+
         console.log('evalSubmit bad', form)
       };
       const submitContract = {
@@ -519,14 +525,15 @@ export const TransactionModal = (props: TransactionModalProps) => {
         </div>
       </div>
 
-      {/* Input collection */}
+      {/* Inputs*/}
+
       {/* Strike */}
       <div style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }}>
         <div style={{ float: 'left', width: 'auto' }}>
           Strike:
         </div>
-        <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
-          <InputNumber value={inputStrike} onChange={handleStrike}/>
+        <div className='transaction-modal-input-number' >
+          <InputNumber min={0.000000001} value={inputStrike} onChange={handleStrike}/>
         </div>
       </div>
 
@@ -535,7 +542,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
         <div style={{ float: 'left', width: 'auto' }}>
           Expiry:
         </div>
-        <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
+        <div className='transaction-modal-input-date' >
           <DatePicker value={inputExpiry} onChange={handleExpiry}/>
         </div>
       </div>
@@ -545,8 +552,8 @@ export const TransactionModal = (props: TransactionModalProps) => {
         <div style={{ float: 'left', width: 'auto' }}>
           Quantity:
         </div>
-        <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
-          <InputNumber value={inputVolume} onChange={handleVolume}/>
+        <div className='transaction-modal-input-number' >
+          <InputNumber min={0} value={inputVolume} onChange={handleVolume}/>
         </div>
       </div>
 
@@ -555,8 +562,8 @@ export const TransactionModal = (props: TransactionModalProps) => {
         <div style={{ float: 'left', width: 'auto' }}>
           Percent Chance:
         </div>
-        <div style={{ float: 'right', marginLeft: 'auto', width: 'auto' }}>
-          <InputNumber value={inputPercent} onChange={handlePercent}/>
+        <div className='transaction-modal-input-number' >
+          <InputNumber min={1} max={99} value={inputPercent} onChange={handlePercent}/>
         </div>
       </div>
 

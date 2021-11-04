@@ -1,7 +1,5 @@
 const pool = require("./pool");
 
-
-/* SOCKET DB */
 // Gets all contracts matching public key as a string
 const getContracts = (symbol_key) => {
   return new Promise((resolve) => {
@@ -21,6 +19,14 @@ const getContracts = (symbol_key) => {
 
 const findMatchingContracts = (contract) => {
   console.log("Query: findMatchingContracts", contract);
+  console.log(
+    contract.symbol,
+    contract.symbol_key,
+    contract.expiry,
+    contract.strike,
+    Math.abs(100 - contract.seller_percent),
+    contract.seller_volume
+  )
   return new Promise((resolve) => {
     pool.query(
       `SELECT * FROM contracts_test WHERE
@@ -31,7 +37,7 @@ const findMatchingContracts = (contract) => {
         contract.symbol_key,
         contract.expiry,
         contract.strike,
-        contract.seller_percent,
+        Math.abs(100 - contract.seller_percent),
         contract.seller_volume
       ],
       (error, results) => {
