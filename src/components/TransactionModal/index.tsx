@@ -152,6 +152,59 @@ const initializeBinaryOptTransaction = async (connection: Connection) => {
   });
 }
 
+const tradeInstruction = (
+  poolAccount: PublicKey,
+  escrowAccount: PublicKey,
+  longTokenMintAccount: PublicKey,
+  shortTokenMintAccount: PublicKey,
+  buyer: PublicKey,
+  seller: PublicKey,
+  buyerAccount: PublicKey,
+  sellerAccount: PublicKey,
+  buyerLongTokenAccount: PublicKey,
+  buyerShortTokenAccount: PublicKey,
+  sellerLongTokenAccount: PublicKey,
+  sellerShortTokenAccount: PublicKey,
+  escrowAuthorityAccount: PublicKey,
+  tokenAccount: PublicKey,
+  size: number,
+  buyerPrice: number,
+  sellerPrice: number
+): TransactionInstruction => {
+  let data = Buffer.from(Uint8Array.of(
+    1,
+    ...new BN(size).toArray("le", 8),
+    ...new BN(buyerPrice).toArray("le", 8),
+    ...new BN(sellerPrice).toArray("le", 8)
+  ))
+
+  return new TransactionInstruction({
+    programId: BINARY_OPTION_PROGRAM_ID,
+    keys: [ // original
+      { pubkey: poolAccount, isSigner: true, isWritable: true },
+      { pubkey: escrowAccount, isSigner: true, isWritable: true },
+      { pubkey: longTokenMintAccount, isSigner: true, isWritable: true },
+      { pubkey: shortTokenMintAccount, isSigner: true, isWritable: true },
+      { pubkey: buyer, isSigner: true, isWritable: false },
+      { pubkey: seller, isSigner: true, isWritable: false },
+      { pubkey: buyerAccount, isSigner: true, isWritable: false },
+      { pubkey: sellerAccount, isSigner: true, isWritable: false },
+      { pubkey: buyerLongTokenAccount, isSigner: true, isWritable: false },
+      { pubkey: buyerShortTokenAccount, isSigner: true, isWritable: false },
+      { pubkey: sellerLongTokenAccount, isSigner: true, isWritable: false },
+      { pubkey: sellerShortTokenAccount, isSigner: true, isWritable: false },
+      { pubkey: escrowAuthorityAccount, isSigner: true, isWritable: false },
+      { pubkey: tokenAccount, isSigner: false, isWritable: false },
+    ],
+    data: data,
+  })
+};
+
+const tradeTransaction = async (connection: Connection) => {
+
+  
+}
+
 const initializeBinaryOptionInstruction = (
   poolAccount: PublicKey,
   escrowMintAccount: PublicKey,
@@ -175,6 +228,7 @@ const initializeBinaryOptionInstruction = (
     ...new BN(strike).toArray("le", 8),
     ...new BN(strikeExponent).toArray("le", 8)
   ))
+
   return new TransactionInstruction({
     programId: BINARY_OPTION_PROGRAM_ID,
     keys: [ // original
