@@ -1,4 +1,5 @@
 import {
+  Connection,
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
@@ -51,6 +52,147 @@ export interface CurrentContractForm {
 export interface TransactionModalProps {
 
 }
+
+
+const initializeBinaryOptTransaction = async (connection: Connection) => {
+
+  let sourceAccount = new Keypair()
+
+  let airdropSignature = await connection.requestAirdrop(
+    sourceAccount.publicKey,
+    LAMPORTS_PER_SOL,
+  );
+
+  await connection.confirmTransaction(airdropSignature);
+
+  let token = await Token.createMint(
+    connection,
+    sourceAccount,
+    sourceAccount.publicKey,
+    null,
+    9,
+    TOKEN_PROGRAM_ID,
+  );
+
+  console.log(token)
+  console.log("token pubkey: ", token.publicKey.toString());
+
+  const pool = new Keypair()
+  const longEscrow = new Keypair()
+  const shortEscrow = new Keypair()
+  const longMint = new Keypair()
+  const shortMint = new Keypair()
+  const poolAccount = pool.publicKey
+  const escrowMintAccount = token.publicKey
+  const escrowAccount = longEscrow.publicKey
+  const longTokenMintAccount = longMint.publicKey
+  const shortTokenMintAccount = shortMint.publicKey
+  const mintAuthorityAccount = sourceAccount.publicKey
+  const updateAuthorityAccount = sourceAccount.publicKey
+  const tokenAccount = TOKEN_PROGRAM_ID
+  const systemAccount = SYSTEM_PROGRAM_ID
+  const rentAccount = SYSVAR_RENT_ID
+
+  console.log(
+    "sourceAccount", sourceAccount.publicKey.toString(),
+    "\nlongMint", longMint.publicKey.toString(),
+    "\nshortMint", shortMint.publicKey.toString(),
+    "\nlongEscrow", longEscrow.publicKey.toString(),
+    "\nshortEscrow", shortEscrow.publicKey.toString(),
+    "\npool", pool.publicKey.toString()
+  )
+  const signers = [
+    sourceAccount,
+    longMint,
+    shortMint,
+    longEscrow,
+    // shortEscrow,
+    pool
+  ]
+
+  const decimals = 2
+  const expiry = new Date().getTime() + 2000
+  const strike = 56700
+  const strikeExponent = 5
+
+  const initBinaryOptionIx = initializeBinaryOptionInstruction(
+    poolAccount,
+    escrowMintAccount,
+    escrowAccount,
+    longTokenMintAccount,
+    shortTokenMintAccount,
+    mintAuthorityAccount,
+    updateAuthorityAccount,
+    tokenAccount,
+    systemAccount,
+    rentAccount,
+    decimals,
+    expiry,
+    strike,
+    strikeExponent
+  )
+  console.log(initBinaryOptionIx)
+  
+  let transaction = new Transaction().add(initBinaryOptionIx)
+
+  // const txid = 
+  await sendAndConfirmTransaction(connection, transaction, signers, {
+    commitment: "confirmed"
+  }).then((txid) => {
+    const devTx = txid + '?cluster=devnet'
+    notify({
+      message: "Transaction executed on Solana",
+      description: (
+        <>
+          <ExplorerLink address={devTx} type="transaction" />
+        </>
+      ),
+      type: "success",
+    });
+  });
+}
+
+const initializeBinaryOptionInstruction = (
+  poolAccount: PublicKey,
+  escrowMintAccount: PublicKey,
+  escrowAccount: PublicKey,
+  longTokenMintAccount: PublicKey,
+  shortTokenMintAccount: PublicKey,
+  mintAuthorityAccount: PublicKey,
+  updateAuthorityAccount: PublicKey,
+  tokenAccount: PublicKey,
+  systemAccount: PublicKey,
+  rentAccount: PublicKey,
+  decimals: number, // u8
+  expiry: number, // u64
+  strike: number, // u64
+  strikeExponent: number // i64 - currently u64 for testing
+): TransactionInstruction => {
+  let data = Buffer.from(Uint8Array.of(
+    0,
+    decimals,
+    ...new BN(expiry).toArray("le", 8),
+    ...new BN(strike).toArray("le", 8),
+    ...new BN(strikeExponent).toArray("le", 8)
+  ))
+  return new TransactionInstruction({
+    programId: BINARY_OPTION_PROGRAM_ID,
+    keys: [ // original
+      { pubkey: poolAccount, isSigner: true, isWritable: true },
+      { pubkey: escrowMintAccount, isSigner: false, isWritable: false },
+      { pubkey: escrowAccount, isSigner: true, isWritable: true },
+      { pubkey: longTokenMintAccount, isSigner: true, isWritable: true },
+      { pubkey: shortTokenMintAccount, isSigner: true, isWritable: true },
+      { pubkey: mintAuthorityAccount, isSigner: true, isWritable: false },
+      { pubkey: updateAuthorityAccount, isSigner: true, isWritable: false },
+      { pubkey: tokenAccount, isSigner: false, isWritable: false },
+      { pubkey: systemAccount, isSigner: false, isWritable: false },
+      { pubkey: rentAccount, isSigner: false, isWritable: false },
+    ],
+    data: data,
+  })
+}
+
 
 export const TransactionModal = (props: TransactionModalProps) => {
   const connection = useConnection();
@@ -201,7 +343,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
   function handleBuyContract(event: React.MouseEvent<HTMLElement, MouseEvent>) {
     event.preventDefault();
     console.log("handleBuyContract", currentContract)
-    initializeBinaryOptTransaction()
+    initializeBinaryOptTransaction(connection)
   }
 
   function evaluateSubmitable(form: CurrentContractForm) {
@@ -313,153 +455,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
       selectTransaction,
       socket
   ])
-
-  const initializeBinaryOptTransaction = async () => {
-    let sourceAccount = new Keypair()
-
-    let airdropSignature = await connection.requestAirdrop(
-      sourceAccount.publicKey,
-      LAMPORTS_PER_SOL,
-    );
-
-    await connection.confirmTransaction(airdropSignature);
-
-    let token = await Token.createMint(
-      connection,
-      sourceAccount,
-      sourceAccount.publicKey,
-      null,
-      9,
-      TOKEN_PROGRAM_ID,
-    );
-
-    console.log(token)
-    console.log("token pubkey: ", token.publicKey.toString());
-
-    const pool = new Keypair()
-    const longEscrow = new Keypair()
-    const shortEscrow = new Keypair()
-    const longMint = new Keypair()
-    const shortMint = new Keypair()
-    const poolAccount = pool.publicKey
-    const escrowMintAccount = token.publicKey
-    const escrowAccount = longEscrow.publicKey
-    const longTokenMintAccount = longMint.publicKey
-    const shortTokenMintAccount = shortMint.publicKey
-    const mintAuthorityAccount = sourceAccount.publicKey
-    const updateAuthorityAccount = sourceAccount.publicKey
-    const tokenAccount = TOKEN_PROGRAM_ID
-    const systemAccount = SYSTEM_PROGRAM_ID
-    const rentAccount = SYSVAR_RENT_ID
-
-    console.log(
-      "sourceAccount", sourceAccount.publicKey.toString(),
-      "\nlongMint", longMint.publicKey.toString(),
-      "\nshortMint", shortMint.publicKey.toString(),
-      "\nlongEscrow", longEscrow.publicKey.toString(),
-      "\nshortEscrow", shortEscrow.publicKey.toString(),
-      "\npool", pool.publicKey.toString()
-    )
-    const signers = [
-      sourceAccount,
-      longMint,
-      shortMint,
-      longEscrow,
-      // shortEscrow,
-      pool
-    ]
-
-    const decimals = 2
-    const expiry = new Date().getTime() + 2000
-    const strike = 56700
-    const strikeExponent = 5
-
-    const initBinaryOptionIx = initializeBinaryOptionInstruction(
-      poolAccount,
-      escrowMintAccount,
-      escrowAccount,
-      longTokenMintAccount,
-      shortTokenMintAccount,
-      mintAuthorityAccount,
-      updateAuthorityAccount,
-      tokenAccount,
-      systemAccount,
-      rentAccount,
-      decimals,
-      expiry,
-      strike,
-      strikeExponent
-    )
-    console.log(initBinaryOptionIx)
-    
-    let transaction = new Transaction().add(initBinaryOptionIx)
-
-    // const txid = 
-    await sendAndConfirmTransaction(connection, transaction, signers, {
-      commitment: "confirmed"
-    })
-    // console.log(txid);
-    // const status = (
-      // await connection.confirmTransaction(
-        // txid,
-        // "max"
-      // )
-    // ).value;
-
-    // console.log(txid, status)
-      // .then((txid) => {
-      // notify({
-        // message: "Transaction executed on Solana",
-        // description: (
-          // <>
-            // <ExplorerLink address={txid} type="transaction" />
-          // </>
-        // ),
-        // type: "success",
-      // });
-    // });
-  }
-
-  const initializeBinaryOptionInstruction = (
-    poolAccount: PublicKey,
-    escrowMintAccount: PublicKey,
-    escrowAccount: PublicKey,
-    longTokenMintAccount: PublicKey,
-    shortTokenMintAccount: PublicKey,
-    mintAuthorityAccount: PublicKey,
-    updateAuthorityAccount: PublicKey,
-    tokenAccount: PublicKey,
-    systemAccount: PublicKey,
-    rentAccount: PublicKey,
-    decimals: number, // u8
-    expiry: number, // u64
-    strike: number, // u64
-    strikeExponent: number // i64 - currently u64 for testing
-  ): TransactionInstruction => {
-    let data = Buffer.from(Uint8Array.of(
-      0,
-      decimals,
-      ...new BN(expiry).toArray("le", 8),
-      ...new BN(strike).toArray("le", 8),
-      ...new BN(strikeExponent).toArray("le", 8)
-    ))
-    return new TransactionInstruction({
-      programId: BINARY_OPTION_PROGRAM_ID,
-      keys: [ // original
-        { pubkey: poolAccount, isSigner: true, isWritable: true },
-        { pubkey: escrowMintAccount, isSigner: false, isWritable: false },
-        { pubkey: escrowAccount, isSigner: true, isWritable: true },
-        { pubkey: longTokenMintAccount, isSigner: true, isWritable: true },
-        { pubkey: shortTokenMintAccount, isSigner: true, isWritable: true },
-        { pubkey: mintAuthorityAccount, isSigner: true, isWritable: false },
-        { pubkey: updateAuthorityAccount, isSigner: true, isWritable: false },
-        { pubkey: tokenAccount, isSigner: false, isWritable: false },
-        { pubkey: systemAccount, isSigner: false, isWritable: false },
-        { pubkey: rentAccount, isSigner: false, isWritable: false },
-      ],
-      data: data,
-    })
-  }
 
   return (
     <Modal
