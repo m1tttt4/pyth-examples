@@ -25,4 +25,4 @@ yarn-error.log*
 .idea
 
 /test-ledger
-**devnetWallets.ts
+*devnetKeypairs.ts

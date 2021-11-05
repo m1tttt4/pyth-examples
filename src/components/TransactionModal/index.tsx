@@ -25,7 +25,7 @@ import React, {
   useState
 } from "react";
 import sigFigs from "../../utils/sigFigs";
-
+import { DEVNET_KEYPAIR_A, DEVNET_KEYPAIR_B} from "../../utils/devnetKeypairs";
 import { useConnection } from "../../contexts/connection";
 import { useWallet } from "../../contexts/wallet";
 import { useTransaction } from "../../contexts/transaction";
@@ -315,17 +315,16 @@ export const TransactionModal = (props: TransactionModalProps) => {
   ])
 
   const initializeBinaryOptTransaction = async () => {
+    let sourceAccount = new Keypair()
 
-    const sourceAccount = new Keypair()
-
-    const airdropSignature = await connection.requestAirdrop(
+    let airdropSignature = await connection.requestAirdrop(
       sourceAccount.publicKey,
       LAMPORTS_PER_SOL,
     );
 
     await connection.confirmTransaction(airdropSignature);
 
-    const token = await Token.createMint(
+    let token = await Token.createMint(
       connection,
       sourceAccount,
       sourceAccount.publicKey,
@@ -335,6 +334,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
     );
 
     console.log(token)
+    console.log("token pubkey: ", token.publicKey.toString());
 
     const pool = new Keypair()
     const longEscrow = new Keypair()
@@ -368,15 +368,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
       // shortEscrow,
       pool
     ]
-    
-    // const signers = [
-      // pool,
-      // // shortEscrow,
-      // longEscrow,
-      // shortMint,
-      // longMint,
-      // sourceAccount,
-    // ]
 
     const decimals = 2
     const expiry = new Date().getTime() + 2000
@@ -407,6 +398,7 @@ export const TransactionModal = (props: TransactionModalProps) => {
     await sendAndConfirmTransaction(connection, transaction, signers, {
       commitment: "confirmed"
     })
+    // console.log(txid);
     // const status = (
       // await connection.confirmTransaction(
         // txid,
@@ -468,18 +460,6 @@ export const TransactionModal = (props: TransactionModalProps) => {
       data: data,
     })
   }
-      // keys: [
-      //   { pubkey: rentAccount, isSigner: false, isWritable: false },
-      //   { pubkey: systemAccount, isSigner: false, isWritable: false },
-      //   { pubkey: tokenAccount, isSigner: false, isWritable: false },
-      //   { pubkey: updateAuthorityAccount, isSigner: true, isWritable: false },
-      //   { pubkey: mintAuthorityAccount, isSigner: true, isWritable: false },
-      //   { pubkey: shortTokenMintAccount, isSigner: true, isWritable: false },
-      //   { pubkey: longTokenMintAccount, isSigner: true, isWritable: false },
-      //   { pubkey: escrowAccount, isSigner: true, isWritable: true },
-      //   { pubkey: escrowMintAccount, isSigner: false, isWritable: false },
-      //   { pubkey: poolAccount, isSigner: true, isWritable: true },
-      // ],
 
   return (
     <Modal
