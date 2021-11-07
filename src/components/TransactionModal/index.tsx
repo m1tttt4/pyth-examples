@@ -36,6 +36,7 @@ import { MatchableContract, MatchableContractProvider, useMatchableContract } fr
 import { ExplorerLink } from "../ExplorerLink";
 import BN from "bn.js";
 
+
 export interface CurrentContractForm {
   symbol: string | undefined,
   symbol_key: string,
@@ -50,14 +51,11 @@ export interface CurrentContractForm {
 }
 
 export interface TransactionModalProps {
-
 }
 
-
 const initializeBinaryOptTransaction = async (connection: Connection) => {
-
+ 
   let sourceAccount = new Keypair()
-
   let airdropSignature = await connection.requestAirdrop(
     sourceAccount.publicKey,
     LAMPORTS_PER_SOL,
@@ -135,7 +133,6 @@ const initializeBinaryOptTransaction = async (connection: Connection) => {
   
   let transaction = new Transaction().add(initBinaryOptionIx)
 
-  // const txid = 
   await sendAndConfirmTransaction(connection, transaction, signers, {
     commitment: "confirmed"
   }).then((txid) => {
@@ -201,7 +198,6 @@ const tradeInstruction = (
 };
 
 const tradeTransaction = async (connection: Connection) => {
-
   
 }
 
@@ -220,7 +216,8 @@ const initializeBinaryOptionInstruction = (
   expiry: number, // u64
   strike: number, // u64
   strikeExponent: number // i64 - currently u64 for testing
-): TransactionInstruction => {
+)
+:TransactionInstruction => {
   let data = Buffer.from(Uint8Array.of(
     0,
     decimals,
@@ -246,7 +243,6 @@ const initializeBinaryOptionInstruction = (
     data: data,
   })
 }
-
 
 export const TransactionModal = (props: TransactionModalProps) => {
   const connection = useConnection();
